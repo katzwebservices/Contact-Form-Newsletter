@@ -138,6 +138,9 @@ class FSCF_CTCT {
             max-width: 400px;
             display: block;
         }
+        #optionsform #sicf_ctct_settings fieldset {
+            border: 1px solid #ccc;
+        }
         .ul-columns {
             columns:15em; -webkit-columns:15em; -moz-columns:15em;
         }
