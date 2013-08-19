@@ -3,7 +3,7 @@
 Plugin Name: Fast Secure Contact Form Newsletter Add-on
 Plugin URI: http://www.katzwebservices.com
 Description: Integrate Constant Contact with Fast Secure Contact Form
-Version: 2.0.1
+Version: 2.0.2
 Author: Katz Web Services, Inc.
 Author URI: http://www.katzwebservices.com
 
@@ -121,8 +121,12 @@ class FSCF_CTCT {
         #tabs-8 .fscf_settings_group {
             border: 0;
             padding:0;
-            margin-top: 13px;
             background: transparent none;
+        }
+        #sicf_ctct_settings h2 {
+            font-size: 20px;
+            padding-top: 1em;
+            margin-bottom: -.1em;
         }
         #enter-account-details { width:100%; border-top:1px solid #ccc; margin-top:1em; padding-top:.5em; }
         .padding-all { padding: 20px; }
@@ -146,7 +150,7 @@ class FSCF_CTCT {
         }
     </style>
     <div id="sicf_ctct_settings">
-        <div class="form-tab"><?php _e('Constant Contact Account Settings', 'si-contact-form-newsletter'); ?></div>
+        <h2><?php _e('Constant Contact Account Settings', 'si-contact-form-newsletter'); ?></h2>
         <div class="clear"></div>
         <form id="ctf_form_settings" action="<?php echo add_query_arg(array('fscf_tab' => 8)); ?>#vCitaSectionAnchor" method="post">
             <fieldset class="padding-all form-wrap">
@@ -178,7 +182,7 @@ class FSCF_CTCT {
 
     <?php if($valid) { ?>
 
-        <div class="form-tab" style="margin-top:20px;"><?php _e(sprintf('Constant Contact Lists (for Form %s)', self::getFormNumber())); ?></div>
+        <h2 style="margin-top:20px;"><?php _e(sprintf('Constant Contact Lists (for Form %s)', self::getFormNumber())); ?></h2>
         <div class="clear"></div>
         <form id="ctf_form_lists" action="<?php echo add_query_arg(array('fscf_tab' => 8)); ?>" method="post">
             <fieldset class="padding-all">

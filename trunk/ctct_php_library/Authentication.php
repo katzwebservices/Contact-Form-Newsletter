@@ -1,5 +1,7 @@
 <?php
-class OAuthException extends Exception{
+
+
+class CTCT_OAuthException extends Exception{
     public function __construct($message, $code = 0, Exception $previous = null){
         parent::__construct($message, $code, $previous);
         $this->logError($message);
@@ -11,7 +13,8 @@ class OAuthException extends Exception{
         error_log($message."\n\n", 3, $file);
     }
 }
-class OAuthConsumer {
+
+class CTCT_OAuthConsumer {
   public $key;
   public $secret;
 
@@ -22,11 +25,11 @@ class OAuthConsumer {
   }
 
   function __toString() {
-    return "OAuthConsumer[key=$this->key,secret=$this->secret]";
+    return "CTCT_OAuthConsumer[key=$this->key,secret=$this->secret]";
   }
 }
 
-class OAuthToken {
+class CTCT_OAuthToken {
   // access tokens and request tokens
   public $key;
   public $secret;
@@ -73,8 +76,8 @@ abstract class OAuthSignatureMethod {
    * the encoding is handled in OAuthRequest when the final
    * request is serialized
    * @param OAuthRequest $request
-   * @param OAuthConsumer $consumer
-   * @param OAuthToken $token
+   * @param CTCT_OAuthConsumer $consumer
+   * @param CTCT_OAuthToken $token
    * @return string
    */
   abstract public function build_signature($request, $consumer, $token);
@@ -82,8 +85,8 @@ abstract class OAuthSignatureMethod {
   /**
    * Verifies that a given signature is correct
    * @param OAuthRequest $request
-   * @param OAuthConsumer $consumer
-   * @param OAuthToken $token
+   * @param CTCT_OAuthConsumer $consumer
+   * @param CTCT_OAuthToken $token
    * @param string $signature
    * @return bool
    */
@@ -421,7 +424,7 @@ class OAuthRequest {
    * builds the Authorization: header
    */
   public function to_header($realm=null) {
-	if($realm)
+  if($realm)
       $out = 'Authorization: OAuth realm="' . OAuthUtil::urlencode_rfc3986($realm) . '"';
     else
       $out = 'Authorization: OAuth';
@@ -430,7 +433,7 @@ class OAuthRequest {
     foreach ($this->parameters as $k => $v) {
       if (substr($k, 0, 5) != "oauth") continue;
       if (is_array($v)) {
-        throw new OAuthException('Arrays not supported in headers');
+        throw new CTCT_OAuthException('Arrays not supported in headers');
       }
       $out .= ',' .
               OAuthUtil::urlencode_rfc3986($k) .
@@ -562,7 +565,7 @@ class OAuthServer {
       $version = '1.0';
     }
     if ($version !== $this->version) {
-      throw new OAuthException("OAuth version '$version' not supported");
+      throw new CTCT_OAuthException("OAuth version '$version' not supported");
     }
     return $version;
   }
@@ -577,12 +580,12 @@ class OAuthServer {
     if (!$signature_method) {
       // According to chapter 7 ("Accessing Protected Ressources") the signature-method
       // parameter is required, and we can't just fallback to PLAINTEXT
-      throw new OAuthException('No signature method parameter. This parameter is required');
+      throw new CTCT_OAuthException('No signature method parameter. This parameter is required');
     }
 
     if (!in_array($signature_method,
                   array_keys($this->signature_methods))) {
-      throw new OAuthException(
+      throw new CTCT_OAuthException(
         "Signature method '$signature_method' not supported " .
         "try one of the following: " .
         implode(", ", array_keys($this->signature_methods))
@@ -597,12 +600,12 @@ class OAuthServer {
   private function get_consumer(&$request) {
     $consumer_key = @$request->get_parameter("oauth_consumer_key");
     if (!$consumer_key) {
-      throw new OAuthException("Invalid consumer key");
+      throw new CTCT_OAuthException("Invalid consumer key");
     }
 
     $consumer = $this->data_store->lookup_consumer($consumer_key);
     if (!$consumer) {
-      throw new OAuthException("Invalid consumer");
+      throw new CTCT_OAuthException("Invalid consumer");
     }
 
     return $consumer;
@@ -617,7 +620,7 @@ class OAuthServer {
       $consumer, $token_type, $token_field
     );
     if (!$token) {
-      throw new OAuthException("Invalid $token_type token: $token_field");
+      throw new CTCT_OAuthException("Invalid $token_type token: $token_field");
     }
     return $token;
   }
@@ -645,7 +648,7 @@ class OAuthServer {
     );
 
     if (!$valid_sig) {
-      throw new OAuthException("Invalid signature");
+      throw new CTCT_OAuthException("Invalid signature");
     }
   }
 
@@ -654,14 +657,14 @@ class OAuthServer {
    */
   private function check_timestamp($timestamp) {
     if( ! $timestamp )
-      throw new OAuthException(
+      throw new CTCT_OAuthException(
         'Missing timestamp parameter. The parameter is required'
       );
 
     // verify that timestamp is recentish
     $now = time();
     if (abs($now - $timestamp) > $this->timestamp_threshold) {
-      throw new OAuthException(
+      throw new CTCT_OAuthException(
         "Expired timestamp, yours $timestamp, ours $now"
       );
     }
@@ -672,7 +675,7 @@ class OAuthServer {
    */
   private function check_nonce($consumer, $token, $nonce, $timestamp) {
     if( ! $nonce )
-      throw new OAuthException(
+      throw new CTCT_OAuthException(
         'Missing nonce parameter. The parameter is required'
       );
 
@@ -684,7 +687,7 @@ class OAuthServer {
       $timestamp
     );
     if ($found) {
-      throw new OAuthException("Nonce already used: $nonce");
+      throw new CTCT_OAuthException("Nonce already used: $nonce");
     }
   }
 
@@ -843,44 +846,44 @@ class OAuthUtil {
 }
 
 class CTCTOauth2 {
-	public $base_uri = "https://oauth2.constantcontact.com/oauth2/oauth/token?grant_type=authorization_code&client_id=";
-	public $api_key;
-	public $consumer_secret;
-	public $url;
-	public $code;
-	
-	function __construct($apikey, $consumersecret, $redirect, $thecode)
-	{
-		$this->api_key = $apikey;
-		$this->consumer_secret = $consumersecret;
-		$this->url = urlencode($redirect);
-		$this->code = $thecode;
-	}
-	
-	function getAccessToken()
-	{
-		$request = $this->base_uri . $this->api_key . 
-		"&client_secret=" . $this->consumer_secret . 
-		"&code=" . $this->code.
- 		"&redirect_uri=" . $this->url;
-		
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $request);
-		
-		curl_setopt($ch, CURLOPT_HEADER, 0);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_setopt($ch, CURLOPT_POST, 1);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
-		
-		$result = curl_exec($ch);
-		curl_close($ch);
-		
-		
-		$obj = json_decode($result);
-		
-		return $access_token = $obj->access_token;
-	}
+  public $base_uri = "https://oauth2.constantcontact.com/oauth2/oauth/token?grant_type=authorization_code&client_id=";
+  public $api_key;
+  public $consumer_secret;
+  public $url;
+  public $code;
+
+  function __construct($apikey, $consumersecret, $redirect, $thecode)
+  {
+    $this->api_key = $apikey;
+    $this->consumer_secret = $consumersecret;
+    $this->url = urlencode($redirect);
+    $this->code = $thecode;
+  }
+
+  function getAccessToken()
+  {
+    $request = $this->base_uri . $this->api_key .
+    "&client_secret=" . $this->consumer_secret .
+    "&code=" . $this->code.
+    "&redirect_uri=" . $this->url;
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $request);
+
+    curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
+
+    $result = curl_exec($ch);
+    curl_close($ch);
+
+
+    $obj = json_decode($result);
+
+    return $access_token = $obj->access_token;
+  }
 }
 
 
@@ -905,7 +908,7 @@ class CTCTOAuth {
       $this->oauth_callback = $oauth_callback;
     }
 
-    $this->consumer = new OAuthConsumer($consumer_key, $consumer_secret, $this->oauth_callback);
+    $this->consumer = new CTCT_OAuthConsumer($consumer_key, $consumer_secret, $this->oauth_callback);
     $this->signature_method = new OAuthSignatureMethod_HMAC_SHA1();
     $this->request_token_path = $this->secure_base_url . "/ws/oauth/request_token";
     $this->access_token_path = $this->secure_base_url . "/ws/oauth/access_token";
@@ -922,7 +925,7 @@ class CTCTOAuth {
     $url = $request->to_url();
     $response = $this->httpRequest($url, $headers, "GET");
     parse_str($response, $response_params);
-    $this->request_token = new OAuthConsumer($response_params['oauth_token'], $response_params['oauth_token_secret'], 1);
+    $this->request_token = new CTCT_OAuthConsumer($response_params['oauth_token'], $response_params['oauth_token_secret'], 1);
   }
 
   function generateAuthorizeUrl() {
@@ -943,7 +946,7 @@ class CTCTOAuth {
       echo $response . "\n";
     }
     // Set username
-    $this->access_token = new OAuthConsumer($response_params['oauth_token'], $response_params['oauth_token_secret'], 1);
+    $this->access_token = new CTCT_OAuthConsumer($response_params['oauth_token'], $response_params['oauth_token_secret'], 1);
   }
 
   function httpRequest($url, $auth_header, $method, $body = NULL) {
@@ -1003,7 +1006,7 @@ class CTCTDataStore {
     }
 
     function lookup_token($username) {
-    	
+
     }
 
     function lookup_nonce($consumer, $token, $nonce, $timestamp) {
@@ -1039,7 +1042,7 @@ class CTCTRequest{
     public $consumer;
     public $accessToken;
     public $signatureMethod;
-    
+
     # OAuth2 Info
     public $access_token;
 
@@ -1065,24 +1068,24 @@ class CTCTRequest{
         } elseif($authType == 'oauth2') {
             $this->authType = 'oauth2';
             $this->oauth2_construct($apiKey, $authParam);
-           
+
         }
 
-        
+
     }
 
     private function oAuth_construct($apiKey, $consumerSecret){
         $this->authType = 'oauth';
-        $this->consumer = new OAuthConsumer($apiKey, $consumerSecret);
+        $this->consumer = new CTCT_OAuthConsumer($apiKey, $consumerSecret);
         $this->signatureMethod = new OAuthSignatureMethod_HMAC_SHA1();
     }
 
     private function oAuth2_construct($apiKey, $consumerSecret){
-    	$this->authType = 'oauth2';
-    	$this->access_token = $consumerSecret;
+      $this->authType = 'oauth2';
+      $this->access_token = $consumerSecret;
 
     }
-    
+
     private function basic_construct($apiKey, $username, $password){
         $this->requestLogin = $apiKey.'%'.$username.':'.$password;
         $this->authType = 'basic';
@@ -1092,7 +1095,7 @@ class CTCTRequest{
         if($this->authType == 'oauth'){
             $Datastore = new CTCTDataStore();
             $accessInfo = $Datastore->lookupUser($this->username);
-            $accessToken = new OAuthToken((string)$accessInfo['key'], (string)$accessInfo['secret']);
+            $accessToken = new CTCT_OAuthToken((string)$accessInfo['key'], (string)$accessInfo['secret']);
             $this->accessToken = $accessToken;
             $request = OAuthRequest::from_consumer_and_token($this->consumer, $accessToken, $method, $url);
             $request->sign_request($this->signatureMethod, $this->consumer, $accessToken);
@@ -1105,8 +1108,8 @@ class CTCTRequest{
            curl_setopt($curl, CURLOPT_USERPWD, $this->requestLogin);
            curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         } else if($this->authType == 'oAuth2') {
-        	//curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-        	
+          //curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+
         }
         curl_setopt($curl, CURLOPT_URL, $url);
         //curl_setopt($curl, CURLOPT_FAILONERROR, 0);
@@ -1114,12 +1117,12 @@ class CTCTRequest{
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($curl, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)");
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
-        
+
         if($this->authType == 'oauth2')
         {
-        	curl_setopt($curl, CURLOPT_HTTPHEADER, array("Authorization: Bearer " . $this->access_token, "Content-Type: ".$contentType, "Content-Length: ". strlen($body), "Accept: application/atom+xml"));
+          curl_setopt($curl, CURLOPT_HTTPHEADER, array("Authorization: Bearer " . $this->access_token, "Content-Type: ".$contentType, "Content-Length: ". strlen($body), "Accept: application/atom+xml"));
         }
-        else { 
+        else {
         curl_setopt($curl, CURLOPT_HTTPHEADER, array("Content-Type: ".$contentType, "Content-Length: ". strlen($body), "Accept: application/atom+xml"));
         }
         curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);

@@ -51,7 +51,10 @@ Note: The plugin requires PHP 5.2 or higher. Constant Contact offers a free 60 d
 
 == Changelog ==
 
-= 2.0 =
+= 2.0.2 =
+* Fixes conflict with plugins using `OAuthException` class
+
+= 2.0 & 2.0.1 =
 * __NOW REQUIRES PHP 5.2 OR HIGHER__
 * __Supports Fast Secure Contact Form Version 4!__, which is coming soon.
 * Also supports version 3.1.8 and higher
@@ -67,7 +70,10 @@ Note: The plugin requires PHP 5.2 or higher. Constant Contact offers a free 60 d
 
 == Upgrade Notice ==
 
-= 2.0.1 =
+= 2.0.2 =
+* Fixes conflict with plugins using `OAuthException` class
+
+= 2.0 & 2.0.1 =
 * __NOW REQUIRES PHP 5.2 OR HIGHER__
 * __Supports Fast Secure Contact Form Version 4!__
 * Also supports version 3.1.8 and higher
