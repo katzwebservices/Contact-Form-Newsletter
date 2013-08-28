@@ -1,5 +1,5 @@
 <?php
-abstract class CCObject{
+abstract class CFN_CCObject{
 	/**
 	 * Validate an object to check that all required fields have been supplied
 	 * @params array $params - object property names to reference for validation before HTTP requests
@@ -9,18 +9,18 @@ abstract class CCObject{
 		try{
 			foreach($params as $field){
 				if(empty($this->$field)){
-					throw new CTCTException("Constant Contact ".get_class($this)." Error: '".$field."' was required but not supplied");
+					throw new CFN_CTCTException("Constant Contact ".get_class($this)." Error: '".$field."' was required but not supplied");
 				}
 			}
-		} catch (CTCTException $e){
+		} catch (CFN_CTCTException $e){
 			$e->generateError();
-		}	
+		}
 	}
 }
-	
 
 
-class ContactList extends CCObject{
+
+class CFN_ContactList extends CFN_CCObject{
     public $contactCount;
     public $displayOnSignup;
     public $id;
@@ -83,18 +83,18 @@ class ContactList extends CCObject{
         $listNode->addChild("SortOrder", $this->sortOrder);
         return $xml->asXML();
     }
-	
+
 	public static function createMemberStruct($parsedResponse){
 		$contact['link'] = (string) $parsedResponse->link->Attributes()->href;
 		$contact['id'] = (string) $parsedResponse->id;
 		$contact['updated'] = (string) $parsedResponse->updated;
 		$contact['emailAddress'] = (string) $parsedResponse->content->ContactListMember->EmailAddress;
 		$contact['fullName'] = (string) $parsedResponse->content->ContactListMember->Name;
-		return $contact;		
+		return $contact;
 	}
 }
 
-class Contact extends CCObject{
+class CFN_Contact extends CFN_CCObject{
     public $link;
     public $id;
     public $updated;
@@ -312,7 +312,7 @@ class Contact extends CCObject{
         $contactlists_node = $contact_node->addChild("ContactLists");
         foreach($this->lists as $list){
             $listNode = $contactlists_node->addChild("ContactList");
-            $listNode->addAttribute("id", $list);                  
+            $listNode->addAttribute("id", $list);
         }
 
         $entry = $xml_object->asXML();
@@ -320,7 +320,7 @@ class Contact extends CCObject{
     }
 }
 
-class Campaign extends CCObject{
+class CFN_Campaign extends CFN_CCObject{
     public $name;
     public $id;
     public $link;
@@ -588,11 +588,11 @@ class Campaign extends CCObject{
         $campaign['styleSheet'] = (string) $parsedReturn->content->Campaign->StyleSheet;
         $campaign['archiveStatus'] = (string) $parsedReturn->content->Campaign->ArchiveStatus;
         $campaign['archiveUrl'] = (string) $parsedReturn->content->Campaign->ArchiveURL;
-        $fromAddr = new VerifiedAddress();
+        $fromAddr = new CFN_VerifiedAddress();
         $fromAddr->email = (string) $parsedReturn->content->Campaign->FromEmail->EmailAddress;
         $fromAddr->link = (string) $parsedReturn->content->Campaign->FromEmail->Email->link->Attributes()->href;
         $campaign['fromAddress'] = $fromAddr;
-        $replyAddr = new VerifiedAddress();
+        $replyAddr = new CFN_VerifiedAddress();
         $replyAddr->email = (string) $parsedReturn->content->Campaign->ReplyToEmail->EmailAddress;
         $replyAddr->link = (string) $parsedReturn->content->Campaign->ReplyToEmail->Email->link->Attributes()->href;
         $campaign['replyAddress'] = $replyAddr;
@@ -614,7 +614,7 @@ class Campaign extends CCObject{
     }
 }
 
-class Folder extends CCObject{
+class CFN_Folder extends CFN_CCObject{
     public $name;
     public $id;
     public $link;
@@ -657,7 +657,7 @@ class Folder extends CCObject{
     }
 }
 
-class Image extends CCObject{
+class CFN_Image extends CFN_CCObject{
     public $name;
     public $id;
     public $link;
@@ -725,7 +725,7 @@ class Image extends CCObject{
     }
 }
 
-class VerifiedAddress extends CCObject{
+class CFN_VerifiedAddress extends CFN_CCObject{
     public $email;
     public $status;
     public $verifiedTime;
@@ -763,7 +763,7 @@ class VerifiedAddress extends CCObject{
     }
 }
 
-class EventFee{
+class CFN_EventFee{
     public $label;
     public $fee;
     public $earlyFee;
@@ -798,7 +798,7 @@ class EventFee{
     }
 }
 
-class Registrant extends CCObject{
+class CFN_Registrant extends CFN_CCObject{
     public $title;
     public $link;
     public $id;
@@ -831,8 +831,8 @@ class Registrant extends CCObject{
         $this->lastName = (isset($params['lastName'])) ? $params['lastName'] : '';
         $this->firstName = (isset($params['firstName'])) ? $params['firstName'] : '';
         $this->email = (isset($params['email'])) ? $params['email'] : '';
-        $this->personalInformation = (isset($params['personalInformation'])) ? $params['personalInformation'] : new PersonalInformation();
-        $this->businessInformation = (isset($params['businessInformation'])) ? $params['businessInformation'] : new BusinessInformation();
+        $this->personalInformation = (isset($params['personalInformation'])) ? $params['personalInformation'] : new CFN_PersonalInformation();
+        $this->businessInformation = (isset($params['businessInformation'])) ? $params['businessInformation'] : new CFN_BusinessInformation();
         $this->customInformation1 = (isset($params['customInformation1'])) ? $params['customInformation1'] : array();
         $this->customInformation2 = (isset($params['customInformation2'])) ? $params['customInformation2'] : array();
         $this->registrationStatus = (isset($params['registrationStatus'])) ? $params['registrationStatus'] : '';
@@ -866,31 +866,31 @@ class Registrant extends CCObject{
         $reg['guestCount'] = (string) $content->Registrant->GuestCount;
         $reg['paymentStatus'] = (string) $content->Registrant->PaymentStatus;
 		$reg['ticketId'] = (string) $content->Registrant->TicketId;
-        $reg['personalInformation'] = new PersonalInformation(PersonalInformation::createStruct($content->Registrant->PersonalInformation));
-        $reg['businessInformation'] = new BusinessInformation(BusinessInformation::createStruct($content->Registrant->BusinessInformation));
+        $reg['personalInformation'] = new CFN_PersonalInformation(CFN_PersonalInformation::createStruct($content->Registrant->PersonalInformation));
+        $reg['businessInformation'] = new CFN_BusinessInformation(CFN_BusinessInformation::createStruct($content->Registrant->BusinessInformation));
         $reg['customInformation1'] = array();
         $reg['customInformation2'] = array();
         $reg['costs'] = array();
         if(isset($content->Registrant->CustomInformation1->CustomField)){
             foreach($content->Registrant->CustomInformation1->CustomField as $customInfo){
-                $reg['customInformation1'][] = CustomField::createFromXml($customInfo);
+                $reg['customInformation1'][] = CFN_CustomField::createFromXml($customInfo);
             }
         }
         if(isset($content->Registrant->CustomInformation2->CustomField)){
             foreach($content->Registrant->CustomInformation2->CustomField as $customInfo){
-                $reg['customInformation2'][] = CustomField::createFromXml($customInfo);
+                $reg['customInformation2'][] = CFN_CustomField::createFromXml($customInfo);
             }
         }
         if(isset($content->Registrant->Costs->Cost)){
             foreach($content->Registrant->Costs->Cost as $cost){
-                $reg['costs'] = new Cost(Cost::createStruct($cost));
+                $reg['costs'] = new CFN_Cost(CFN_Cost::createStruct($cost));
             }
         }
         return $reg;
     }
 }
 
-class Cost{
+class CFN_Cost{
     public $count;
     public $feeType;
     public $rate;
@@ -922,7 +922,7 @@ class Cost{
     }
 }
 
-class CustomField{
+class CFN_CustomField{
     public $question;
     public $answers;
 
@@ -936,10 +936,10 @@ class CustomField{
     }
 
     /**
-     * Create CustomField object from XML
+     * Create CFN_CustomField object from XML
      * @static
      * @param SimpleXMLElement $parsedXml
-     * @return CustomField
+     * @return CFN_CustomField
      */
     public static function createFromXml($parsedXml){
         $quest = (string) $parsedXml->Question;
@@ -947,11 +947,11 @@ class CustomField{
         foreach($parsedXml->Answers->Answer as $ans){
             $answers[] = (string) $ans;
         }
-        return new CustomField($quest, $answers);
+        return new CFN_CustomField($quest, $answers);
     }
 }
 
-class RegistrantInformation{
+class CFN_RegistrantInformation{
     public $label;
     public $addr1;
     public $addr2;
@@ -1001,7 +1001,7 @@ class RegistrantInformation{
     }
 }
 
-class PersonalInformation extends RegistrantInformation{
+class CFN_PersonalInformation extends CFN_RegistrantInformation{
     public $cellPhone;
 
     /**
@@ -1026,7 +1026,7 @@ class PersonalInformation extends RegistrantInformation{
     }
 }
 
-class BusinessInformation extends RegistrantInformation{
+class CFN_BusinessInformation extends CFN_RegistrantInformation{
     public $fax;
     public $website;
     public $blog;
@@ -1066,7 +1066,7 @@ class BusinessInformation extends RegistrantInformation{
     }
 }
 
-class EventLocation{
+class CFN_EventLocation{
     public $location;
     public $addr1;
     public $addr2;
@@ -1092,7 +1092,7 @@ class EventLocation{
     }
 }
 
-class Event extends CCObject{
+class CFN_Event extends CFN_CCObject{
     public $title;
     public $link;
     public $updated;
@@ -1130,7 +1130,7 @@ class Event extends CCObject{
         $this->createdDate = (isset($params['createdDate'])) ? $params['createdDate'] : '';
         $this->status = (isset($params['status'])) ? $params['status'] : '';
         $this->eventType = (isset($params['eventType'])) ? $params['eventType'] : '';
-        $this->eventLocation = (isset($params['eventLocation'])) ? $params['eventLocation'] : new EventLocation();
+        $this->eventLocation = (isset($params['eventLocation'])) ? $params['eventLocation'] : new CFN_EventLocation();
         $this->registrationUrl = (isset($params['registrationUrl'])) ? $params['registrationUrl'] : '';
         $this->startDate = (isset($params['startDate'])) ? $params['startDate'] : '';
         $this->endDate = (isset($params['endDate'])) ? $params['endDate'] : '';
@@ -1140,7 +1140,7 @@ class Event extends CCObject{
         $this->eventFeeRequired = (isset($params['eventFeeRequired'])) ? $params['eventFeeRequired'] : '';
         $this->currencyType = (isset($params['currencyType'])) ? $params['currencyType'] : '';
         $this->paymentOptions = (isset($params['paymentOptions'])) ? $params['paymentOptions'] : array();
-        $this->registrationTypes = (isset($params['registrationTypes'])) ? $params['registrationTypes'] : array(new RegistrationType());
+        $this->registrationTypes = (isset($params['registrationTypes'])) ? $params['registrationTypes'] : array(new CFN_RegistrationType());
     }
 
     /**
@@ -1169,7 +1169,7 @@ class Event extends CCObject{
         $location['state'] = (string) $eventNode->Event->EventLocation->State;
         $location['country'] = (string) $eventNode->Event->EventLocation->Country;
         $location['postalCode'] = (string) $eventNode->Event->EventLocation->PostalCode;
-        $event['eventLocation'] = new EventLocation($location);
+        $event['eventLocation'] = new CFN_EventLocation($location);
         $event['registrationUrl'] = (string) $eventNode->Event->RegistrationURL;
         $event['startDate'] = (string) $eventNode->Event->StartDate;
         $event['endDate'] = (string) $eventNode->Event->EndDate;
@@ -1186,11 +1186,11 @@ class Event extends CCObject{
                 try{
                     if($type == "PAYPAL"){
                         $paypalAddr = (string) $options->PayPalAccountEmail;
-                        $payOption = new PayPalPayment($paypalAddr);
+                        $payOption = new CFN_PayPalPayment($paypalAddr);
                     } elseif ($type == "CHECK"){
-                        $payOption = new CheckPayment(CheckPayment::createStruct($options));
+                        $payOption = new CFN_CheckPayment(CheckPayment::createStruct($options));
                     } elseif ($type == "DOOR"){
-                        $payOption = new DoorPayment();
+                        $payOption = new CFN_DoorPayment();
                     }
                     if (empty($payOption)){throw new Exception('Payment Type '.$type.' is not a valid option');}
                 } catch (Exception $e) {
@@ -1199,7 +1199,7 @@ class Event extends CCObject{
                     $event['paymentOptions'][] = $payOption;
             }
             foreach($eventNode->Event->RegistrationTypes->RegistrationType as $regType){
-                $registration = new RegistrationType(RegistrationType::createStruct($regType));
+                $registration = new CFN_RegistrationType(CFN_RegistrationType::createStruct($regType));
             }
             $event['registrationTypes'][] = $registration;
         }
@@ -1207,9 +1207,9 @@ class Event extends CCObject{
     }
 }
 
-class PaymentOption{}
+class CFN_PaymentOption{}
 
-class PayPalPayment extends PaymentOption{
+class CFN_PayPalPayment extends CFN_PaymentOption{
     public $type;
     public $payPalEmail;
 
@@ -1223,7 +1223,7 @@ class PayPalPayment extends PaymentOption{
     }
 }
 
-class DoorPayment extends PaymentOption{
+class CFN_DoorPayment extends CFN_PaymentOption{
     public $type;
 
     /**
@@ -1234,7 +1234,7 @@ class DoorPayment extends PaymentOption{
     }
 }
 
-class CheckPayment extends PaymentOption{
+class CFN_CheckPayment extends CFN_PaymentOption{
     public $type;
     public $addr1;
     public $addr2;
@@ -1278,7 +1278,7 @@ class CheckPayment extends PaymentOption{
     }
 }
 
-class RegistrationType{
+class CFN_RegistrationType{
     public $name;
     public $registrationLimit;
     public $registrationClosedManually;
@@ -1313,14 +1313,14 @@ class RegistrationType{
         $registrationType['ticketing'] = (string) $parsedResponse->Ticketing;
         $registrationType['eventFees'] = array();
         foreach($parsedResponse->EventFees->EventFee as $fee){
-            $eventFee = new EventFee(EventFee::createStruct($fee));
+            $eventFee = new CFN_EventFee(CFN_EventFee::createStruct($fee));
             $registrationType['eventFees'][] = $eventFee;
         }
         return $registrationType;
     }
 }
 
-class CampaignEvent{
+class CFN_CampaignEvent{
     public $id;
     public $title;
     public $updated;
@@ -1357,7 +1357,7 @@ class CampaignEvent{
     }
 }
 
-class Schedule extends CCObject{
+class CFN_Schedule extends CFN_CCObject{
     public $link;
     public $id;
     public $updated;
@@ -1371,7 +1371,7 @@ class Schedule extends CCObject{
         $this->time = (isset($params['time'])) ? $params['time'] : '';
         $this->campaign = (isset($params['campaign'])) ? $params['campaign'] : '';
     }
-    
+
     public function createXml(){
     	$this->validate(array('time'));
         $xml = simplexml_load_string("<?xml version='1.0' encoding='UTF-8' standalone='yes'?><entry xmlns='http://www.w3.org/2005/Atom'/>");
@@ -1400,7 +1400,7 @@ class Schedule extends CCObject{
     }
 }
 
-class Utility{
+class CFN_Utility{
     /**
      * Find the URL of the provided object
      * @static
@@ -1412,8 +1412,8 @@ class Utility{
          try{
             if (is_string($item)){$return = $item;}
             elseif (is_object($item)){$return = 'https://api.constantcontact.com'.$item->link;}
-            if($return == null){ throw new CTCTException('Constant Contact Error: Unable to determine which url to access');}
-         } catch (CTCTException $e){
+            if($return == null){ throw new CFN_CTCTException('Constant Contact Error: Unable to determine which url to access');}
+         } catch (CFN_CTCTException $e){
             $e->generateError();
          }
           return $return;
@@ -1431,7 +1431,7 @@ class Utility{
     }
 }
 
-class CTCTException extends Exception{
+class CFN_CTCTException extends Exception{
     public function __construct($message, $code = 0, Exception $previous = null){
         parent::__construct($message, $code);
     }

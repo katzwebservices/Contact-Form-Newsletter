@@ -51,6 +51,13 @@ Note: The plugin requires PHP 5.2 or higher. Constant Contact offers a free 60 d
 
 == Changelog ==
 
+= 2.0.4 =
+* Fixed error caused by renaming libraries, introduced in 2.0.3. Sorry about that.
+
+= 2.0.3 =
+* Fixes issue with modifying the version number of Fast Secure Contact Form, making it seem like there's always an update available.
+* Fixes potential conflicts with PHP Constant Contact libraries
+
 = 2.0.2 =
 * Fixes conflict with plugins using `OAuthException` class
 
@@ -69,6 +76,13 @@ Note: The plugin requires PHP 5.2 or higher. Constant Contact offers a free 60 d
 * Blast off!
 
 == Upgrade Notice ==
+
+= 2.0.4 =
+* Fixed error caused by renaming libraries, introduced in 2.0.3. Sorry about that.
+
+= 2.0.3 =
+* Fixes issue with modifying the version number of Fast Secure Contact Form, making it seem like there's always an update available.
+* Fixes potential conflicts with PHP Constant Contact libraries
 
 = 2.0.2 =
 * Fixes conflict with plugins using `OAuthException` class

@@ -1,7 +1,7 @@
 <?php
 
 
-class CTCT_OAuthException extends Exception{
+class CFN_OAuthException extends Exception{
     public function __construct($message, $code = 0, Exception $previous = null){
         parent::__construct($message, $code, $previous);
         $this->logError($message);
@@ -14,7 +14,7 @@ class CTCT_OAuthException extends Exception{
     }
 }
 
-class CTCT_OAuthConsumer {
+class CFN_OAuthConsumer {
   public $key;
   public $secret;
 
@@ -25,11 +25,11 @@ class CTCT_OAuthConsumer {
   }
 
   function __toString() {
-    return "CTCT_OAuthConsumer[key=$this->key,secret=$this->secret]";
+    return "CFN_OAuthConsumer[key=$this->key,secret=$this->secret]";
   }
 }
 
-class CTCT_OAuthToken {
+class CFN_OAuthToken {
   // access tokens and request tokens
   public $key;
   public $secret;
@@ -49,9 +49,9 @@ class CTCT_OAuthToken {
    */
   function to_string() {
     return "oauth_token=" .
-           OAuthUtil::urlencode_rfc3986($this->key) .
+           CFN_OAuthUtil::urlencode_rfc3986($this->key) .
            "&oauth_token_secret=" .
-           OAuthUtil::urlencode_rfc3986($this->secret);
+           CFN_OAuthUtil::urlencode_rfc3986($this->secret);
   }
 
   function __toString() {
@@ -63,7 +63,7 @@ class CTCT_OAuthToken {
  * A class for implementing a Signature Method
  * See section 9 ("Signing Requests") in the spec
  */
-abstract class OAuthSignatureMethod {
+abstract class CFN_OAuthSignatureMethod {
   /**
    * Needs to return the name of the Signature Method (ie HMAC-SHA1)
    * @return string
@@ -73,20 +73,20 @@ abstract class OAuthSignatureMethod {
   /**
    * Build up the signature
    * NOTE: The output of this function MUST NOT be urlencoded.
-   * the encoding is handled in OAuthRequest when the final
+   * the encoding is handled in CFN_OAuthRequest when the final
    * request is serialized
-   * @param OAuthRequest $request
-   * @param CTCT_OAuthConsumer $consumer
-   * @param CTCT_OAuthToken $token
+   * @param CFN_OAuthRequest $request
+   * @param CFN_OAuthConsumer $consumer
+   * @param CFN_OAuthToken $token
    * @return string
    */
   abstract public function build_signature($request, $consumer, $token);
 
   /**
    * Verifies that a given signature is correct
-   * @param OAuthRequest $request
-   * @param CTCT_OAuthConsumer $consumer
-   * @param CTCT_OAuthToken $token
+   * @param CFN_OAuthRequest $request
+   * @param CFN_OAuthConsumer $consumer
+   * @param CFN_OAuthToken $token
    * @param string $signature
    * @return bool
    */
@@ -103,7 +103,7 @@ abstract class OAuthSignatureMethod {
  * character (ASCII code 38) even if empty.
  *   - Chapter 9.2 ("HMAC-SHA1")
  */
-class OAuthSignatureMethod_HMAC_SHA1 extends OAuthSignatureMethod {
+class CFN_OAuthSignatureMethod_HMAC_SHA1 extends CFN_OAuthSignatureMethod {
   function get_name() {
     return "HMAC-SHA1";
   }
@@ -117,7 +117,7 @@ class OAuthSignatureMethod_HMAC_SHA1 extends OAuthSignatureMethod {
       ($token) ? $token->secret : ""
     );
 
-    $key_parts = OAuthUtil::urlencode_rfc3986($key_parts);
+    $key_parts = CFN_OAuthUtil::urlencode_rfc3986($key_parts);
     $key = implode('&', $key_parts);
 
     return base64_encode(hash_hmac('sha1', $base_string, $key, true));
@@ -129,7 +129,7 @@ class OAuthSignatureMethod_HMAC_SHA1 extends OAuthSignatureMethod {
  * over a secure channel such as HTTPS. It does not use the Signature Base String.
  *   - Chapter 9.4 ("PLAINTEXT")
  */
-class OAuthSignatureMethod_PLAINTEXT extends OAuthSignatureMethod {
+class CFN_OAuthSignatureMethod_PLAINTEXT extends CFN_OAuthSignatureMethod {
   public function get_name() {
     return "PLAINTEXT";
   }
@@ -141,7 +141,7 @@ class OAuthSignatureMethod_PLAINTEXT extends OAuthSignatureMethod {
    *   - Chapter 9.4.1 ("Generating Signatures")
    *
    * Please note that the second encoding MUST NOT happen in the SignatureMethod, as
-   * OAuthRequest handles this!
+   * CFN_OAuthRequest handles this!
    */
   public function build_signature($request, $consumer, $token) {
     $key_parts = array(
@@ -149,7 +149,7 @@ class OAuthSignatureMethod_PLAINTEXT extends OAuthSignatureMethod {
       ($token) ? $token->secret : ""
     );
 
-    $key_parts = OAuthUtil::urlencode_rfc3986($key_parts);
+    $key_parts = CFN_OAuthUtil::urlencode_rfc3986($key_parts);
     $key = implode('&', $key_parts);
     $request->base_string = $key;
 
@@ -165,7 +165,7 @@ class OAuthSignatureMethod_PLAINTEXT extends OAuthSignatureMethod {
  * specification.
  *   - Chapter 9.3 ("RSA-SHA1")
  */
-abstract class OAuthSignatureMethod_RSA_SHA1 extends OAuthSignatureMethod {
+abstract class CFN_OAuthSignatureMethod_RSA_SHA1 extends CFN_OAuthSignatureMethod {
   public function get_name() {
     return "RSA-SHA1";
   }
@@ -224,7 +224,7 @@ abstract class OAuthSignatureMethod_RSA_SHA1 extends OAuthSignatureMethod {
   }
 }
 
-class OAuthRequest {
+class CFN_OAuthRequest {
   private $parameters;
   private $http_method;
   private $http_url;
@@ -235,7 +235,7 @@ class OAuthRequest {
 
   function __construct($http_method, $http_url, $parameters=NULL) {
     @$parameters or $parameters = array();
-    $parameters = array_merge( OAuthUtil::parse_parameters(parse_url($http_url, PHP_URL_QUERY)), $parameters);
+    $parameters = array_merge( CFN_OAuthUtil::parse_parameters(parse_url($http_url, PHP_URL_QUERY)), $parameters);
     $this->parameters = $parameters;
     $this->http_method = $http_method;
     $this->http_url = $http_url;
@@ -262,10 +262,10 @@ class OAuthRequest {
     // parsed parameter-list
     if (!$parameters) {
       // Find request headers
-      $request_headers = OAuthUtil::get_headers();
+      $request_headers = CFN_OAuthUtil::get_headers();
 
       // Parse the query-string to find GET parameters
-      $parameters = OAuthUtil::parse_parameters($_SERVER['QUERY_STRING']);
+      $parameters = CFN_OAuthUtil::parse_parameters($_SERVER['QUERY_STRING']);
 
       // It's a POST request of the proper content-type, so parse POST
       // parameters and add those overriding any duplicates from GET
@@ -273,7 +273,7 @@ class OAuthRequest {
           && @strstr($request_headers["Content-Type"],
                      "application/x-www-form-urlencoded")
           ) {
-        $post_data = OAuthUtil::parse_parameters(
+        $post_data = CFN_OAuthUtil::parse_parameters(
           file_get_contents(self::$POST_INPUT)
         );
         $parameters = array_merge($parameters, $post_data);
@@ -282,7 +282,7 @@ class OAuthRequest {
       // We have a Authorization-header with OAuth data. Parse the header
       // and add those overriding any duplicates from GET or POST
       if (@substr($request_headers['Authorization'], 0, 6) == "OAuth ") {
-        $header_parameters = OAuthUtil::split_header(
+        $header_parameters = CFN_OAuthUtil::split_header(
           $request_headers['Authorization']
         );
         $parameters = array_merge($parameters, $header_parameters);
@@ -290,7 +290,7 @@ class OAuthRequest {
 
     }
 
-    return new OAuthRequest($http_method, $http_url, $parameters);
+    return new CFN_OAuthRequest($http_method, $http_url, $parameters);
   }
 
   /**
@@ -298,16 +298,16 @@ class OAuthRequest {
    */
   public static function from_consumer_and_token($consumer, $token, $http_method, $http_url, $parameters=NULL) {
     @$parameters or $parameters = array();
-    $defaults = array("oauth_version" => OAuthRequest::$version,
-                      "oauth_nonce" => OAuthRequest::generate_nonce(),
-                      "oauth_timestamp" => OAuthRequest::generate_timestamp(),
+    $defaults = array("oauth_version" => CFN_OAuthRequest::$version,
+                      "oauth_nonce" => CFN_OAuthRequest::generate_nonce(),
+                      "oauth_timestamp" => CFN_OAuthRequest::generate_timestamp(),
                       "oauth_consumer_key" => $consumer->key);
     if ($token)
       $defaults['oauth_token'] = $token->key;
 
     $parameters = array_merge($defaults, $parameters);
 
-    return new OAuthRequest($http_method, $http_url, $parameters);
+    return new CFN_OAuthRequest($http_method, $http_url, $parameters);
   }
 
   public function set_parameter($name, $value, $allow_duplicates = true) {
@@ -351,7 +351,7 @@ class OAuthRequest {
       unset($params['oauth_signature']);
     }
 
-    return OAuthUtil::build_http_query($params);
+    return CFN_OAuthUtil::build_http_query($params);
   }
 
   /**
@@ -368,7 +368,7 @@ class OAuthRequest {
       $this->get_signable_parameters()
     );
 
-    $parts = OAuthUtil::urlencode_rfc3986($parts);
+    $parts = CFN_OAuthUtil::urlencode_rfc3986($parts);
 
     return implode('&', $parts);
   }
@@ -417,7 +417,7 @@ class OAuthRequest {
    * builds the data one would send in a POST request
    */
   public function to_postdata() {
-    return OAuthUtil::build_http_query($this->parameters);
+    return CFN_OAuthUtil::build_http_query($this->parameters);
   }
 
   /**
@@ -425,7 +425,7 @@ class OAuthRequest {
    */
   public function to_header($realm=null) {
   if($realm)
-      $out = 'Authorization: OAuth realm="' . OAuthUtil::urlencode_rfc3986($realm) . '"';
+      $out = 'Authorization: OAuth realm="' . CFN_OAuthUtil::urlencode_rfc3986($realm) . '"';
     else
       $out = 'Authorization: OAuth';
 
@@ -433,12 +433,12 @@ class OAuthRequest {
     foreach ($this->parameters as $k => $v) {
       if (substr($k, 0, 5) != "oauth") continue;
       if (is_array($v)) {
-        throw new CTCT_OAuthException('Arrays not supported in headers');
+        throw new CFN_OAuthException('Arrays not supported in headers');
       }
       $out .= ',' .
-              OAuthUtil::urlencode_rfc3986($k) .
+              CFN_OAuthUtil::urlencode_rfc3986($k) .
               '="' .
-              OAuthUtil::urlencode_rfc3986($v) .
+              CFN_OAuthUtil::urlencode_rfc3986($v) .
               '"';
     }
     return $out;
@@ -482,7 +482,7 @@ class OAuthRequest {
   }
 }
 
-class OAuthServer {
+class CFN_OAuthServer {
   protected $timestamp_threshold = 300; // in seconds, five minutes
   protected $version = '1.0';             // hi blaine
   protected $signature_methods = array();
@@ -565,7 +565,7 @@ class OAuthServer {
       $version = '1.0';
     }
     if ($version !== $this->version) {
-      throw new CTCT_OAuthException("OAuth version '$version' not supported");
+      throw new CFN_OAuthException("OAuth version '$version' not supported");
     }
     return $version;
   }
@@ -580,12 +580,12 @@ class OAuthServer {
     if (!$signature_method) {
       // According to chapter 7 ("Accessing Protected Ressources") the signature-method
       // parameter is required, and we can't just fallback to PLAINTEXT
-      throw new CTCT_OAuthException('No signature method parameter. This parameter is required');
+      throw new CFN_OAuthException('No signature method parameter. This parameter is required');
     }
 
     if (!in_array($signature_method,
                   array_keys($this->signature_methods))) {
-      throw new CTCT_OAuthException(
+      throw new CFN_OAuthException(
         "Signature method '$signature_method' not supported " .
         "try one of the following: " .
         implode(", ", array_keys($this->signature_methods))
@@ -600,12 +600,12 @@ class OAuthServer {
   private function get_consumer(&$request) {
     $consumer_key = @$request->get_parameter("oauth_consumer_key");
     if (!$consumer_key) {
-      throw new CTCT_OAuthException("Invalid consumer key");
+      throw new CFN_OAuthException("Invalid consumer key");
     }
 
     $consumer = $this->data_store->lookup_consumer($consumer_key);
     if (!$consumer) {
-      throw new CTCT_OAuthException("Invalid consumer");
+      throw new CFN_OAuthException("Invalid consumer");
     }
 
     return $consumer;
@@ -620,7 +620,7 @@ class OAuthServer {
       $consumer, $token_type, $token_field
     );
     if (!$token) {
-      throw new CTCT_OAuthException("Invalid $token_type token: $token_field");
+      throw new CFN_OAuthException("Invalid $token_type token: $token_field");
     }
     return $token;
   }
@@ -648,7 +648,7 @@ class OAuthServer {
     );
 
     if (!$valid_sig) {
-      throw new CTCT_OAuthException("Invalid signature");
+      throw new CFN_OAuthException("Invalid signature");
     }
   }
 
@@ -657,14 +657,14 @@ class OAuthServer {
    */
   private function check_timestamp($timestamp) {
     if( ! $timestamp )
-      throw new CTCT_OAuthException(
+      throw new CFN_OAuthException(
         'Missing timestamp parameter. The parameter is required'
       );
 
     // verify that timestamp is recentish
     $now = time();
     if (abs($now - $timestamp) > $this->timestamp_threshold) {
-      throw new CTCT_OAuthException(
+      throw new CFN_OAuthException(
         "Expired timestamp, yours $timestamp, ours $now"
       );
     }
@@ -675,7 +675,7 @@ class OAuthServer {
    */
   private function check_nonce($consumer, $token, $nonce, $timestamp) {
     if( ! $nonce )
-      throw new CTCT_OAuthException(
+      throw new CFN_OAuthException(
         'Missing nonce parameter. The parameter is required'
       );
 
@@ -687,17 +687,17 @@ class OAuthServer {
       $timestamp
     );
     if ($found) {
-      throw new CTCT_OAuthException("Nonce already used: $nonce");
+      throw new CFN_OAuthException("Nonce already used: $nonce");
     }
   }
 
 }
 
 
-class OAuthUtil {
+class CFN_OAuthUtil {
   public static function urlencode_rfc3986($input) {
   if (is_array($input)) {
-    return array_map(array('OAuthUtil', 'urlencode_rfc3986'), $input);
+    return array_map(array('CFN_OAuthUtil', 'urlencode_rfc3986'), $input);
   } else if (is_scalar($input)) {
     return str_replace(
       '+',
@@ -729,7 +729,7 @@ class OAuthUtil {
       $header_name = $matches[2][0];
       $header_content = (isset($matches[5])) ? $matches[5][0] : $matches[4][0];
       if (preg_match('/^oauth_/', $header_name) || !$only_allow_oauth_parameters) {
-        $params[$header_name] = OAuthUtil::urldecode_rfc3986($header_content);
+        $params[$header_name] = CFN_OAuthUtil::urldecode_rfc3986($header_content);
       }
       $offset = $match[1] + strlen($match[0]);
     }
@@ -793,8 +793,8 @@ class OAuthUtil {
     $parsed_parameters = array();
     foreach ($pairs as $pair) {
       $split = explode('=', $pair, 2);
-      $parameter = OAuthUtil::urldecode_rfc3986($split[0]);
-      $value = isset($split[1]) ? OAuthUtil::urldecode_rfc3986($split[1]) : '';
+      $parameter = CFN_OAuthUtil::urldecode_rfc3986($split[0]);
+      $value = isset($split[1]) ? CFN_OAuthUtil::urldecode_rfc3986($split[1]) : '';
 
       if (isset($parsed_parameters[$parameter])) {
         // We have already recieved parameter(s) with this name, so add to the list
@@ -818,8 +818,8 @@ class OAuthUtil {
     if (!$params) return '';
 
     // Urlencode both keys and values
-    $keys = OAuthUtil::urlencode_rfc3986(array_keys($params));
-    $values = OAuthUtil::urlencode_rfc3986(array_values($params));
+    $keys = CFN_OAuthUtil::urlencode_rfc3986(array_keys($params));
+    $values = CFN_OAuthUtil::urlencode_rfc3986(array_values($params));
     $params = array_combine($keys, $values);
 
     // Parameters are sorted by name, using lexicographical byte value ordering.
@@ -845,7 +845,7 @@ class OAuthUtil {
   }
 }
 
-class CTCTOauth2 {
+class CFN_Oauth2 {
   public $base_uri = "https://oauth2.constantcontact.com/oauth2/oauth/token?grant_type=authorization_code&client_id=";
   public $api_key;
   public $consumer_secret;
@@ -887,7 +887,7 @@ class CTCTOauth2 {
 }
 
 
-class CTCTOAuth {
+class CFN_OAuth {
   public $base_url = "https://api.constantcontact.com";
   public $secure_base_url = "https://oauth.constantcontact.com";
   public $oauth_callback = "oob";
@@ -908,8 +908,8 @@ class CTCTOAuth {
       $this->oauth_callback = $oauth_callback;
     }
 
-    $this->consumer = new CTCT_OAuthConsumer($consumer_key, $consumer_secret, $this->oauth_callback);
-    $this->signature_method = new OAuthSignatureMethod_HMAC_SHA1();
+    $this->consumer = new CFN_OAuthConsumer($consumer_key, $consumer_secret, $this->oauth_callback);
+    $this->signature_method = new CFN_OAuthSignatureMethod_HMAC_SHA1();
     $this->request_token_path = $this->secure_base_url . "/ws/oauth/request_token";
     $this->access_token_path = $this->secure_base_url . "/ws/oauth/access_token";
     $this->authorize_path = $this->secure_base_url . "/ws/oauth/confirm_access";
@@ -918,14 +918,14 @@ class CTCTOAuth {
 
   function getRequestToken() {
     $consumer = $this->consumer;
-    $request = OAuthRequest::from_consumer_and_token($consumer, NULL, "GET", $this->request_token_path);
+    $request = CFN_OAuthRequest::from_consumer_and_token($consumer, NULL, "GET", $this->request_token_path);
     $request->set_parameter("oauth_callback", $this->oauth_callback);
     $request->sign_request($this->signature_method, $consumer, NULL);
     $headers = Array();
     $url = $request->to_url();
     $response = $this->httpRequest($url, $headers, "GET");
     parse_str($response, $response_params);
-    $this->request_token = new CTCT_OAuthConsumer($response_params['oauth_token'], $response_params['oauth_token_secret'], 1);
+    $this->request_token = new CFN_OAuthConsumer($response_params['oauth_token'], $response_params['oauth_token_secret'], 1);
   }
 
   function generateAuthorizeUrl() {
@@ -935,7 +935,7 @@ class CTCTOAuth {
   }
 
   function getAccessToken($oauth_verifier) {
-    $request = OAuthRequest::from_consumer_and_token($this->consumer, $this->request_token, "GET", $this->access_token_path);
+    $request = CFN_OAuthRequest::from_consumer_and_token($this->consumer, $this->request_token, "GET", $this->access_token_path);
     $request->set_parameter("oauth_verifier", $oauth_verifier);
     $request->sign_request($this->signature_method, $this->consumer, $this->request_token);
     $headers = Array();
@@ -946,7 +946,7 @@ class CTCTOAuth {
       echo $response . "\n";
     }
     // Set username
-    $this->access_token = new CTCT_OAuthConsumer($response_params['oauth_token'], $response_params['oauth_token_secret'], 1);
+    $this->access_token = new CFN_OAuthConsumer($response_params['oauth_token'], $response_params['oauth_token_secret'], 1);
   }
 
   function httpRequest($url, $auth_header, $method, $body = NULL) {
@@ -977,7 +977,7 @@ class CTCTOAuth {
   }
 }
 
-class CTCTDataStore {
+class CFN_DataStore {
     function __construct(){
     }
     function addUser($user){
@@ -1026,7 +1026,7 @@ class CTCTDataStore {
 
 }
 
-class CTCTRequest{
+class CFN_CTCTRequest{
     public $baseUri = 'https://api.constantcontact.com';
 
     # Mutual Credentials
@@ -1076,8 +1076,8 @@ class CTCTRequest{
 
     private function oAuth_construct($apiKey, $consumerSecret){
         $this->authType = 'oauth';
-        $this->consumer = new CTCT_OAuthConsumer($apiKey, $consumerSecret);
-        $this->signatureMethod = new OAuthSignatureMethod_HMAC_SHA1();
+        $this->consumer = new CFN_OAuthConsumer($apiKey, $consumerSecret);
+        $this->signatureMethod = new CFN_OAuthSignatureMethod_HMAC_SHA1();
     }
 
     private function oAuth2_construct($apiKey, $consumerSecret){
@@ -1093,11 +1093,11 @@ class CTCTRequest{
 
     public function makeRequest($url, $method, $body='', $contentType="application/atom+xml"){
         if($this->authType == 'oauth'){
-            $Datastore = new CTCTDataStore();
+            $Datastore = new CFN_DataStore();
             $accessInfo = $Datastore->lookupUser($this->username);
-            $accessToken = new CTCT_OAuthToken((string)$accessInfo['key'], (string)$accessInfo['secret']);
+            $accessToken = new CFN_OAuthToken((string)$accessInfo['key'], (string)$accessInfo['secret']);
             $this->accessToken = $accessToken;
-            $request = OAuthRequest::from_consumer_and_token($this->consumer, $accessToken, $method, $url);
+            $request = CFN_OAuthRequest::from_consumer_and_token($this->consumer, $accessToken, $method, $url);
             $request->sign_request($this->signatureMethod, $this->consumer, $accessToken);
             $request->get_normalized_http_method();
             $url = $request;
@@ -1135,11 +1135,11 @@ class CTCTRequest{
             curl_close($curl);
 
             if(!in_array($return['info']['http_code'], array('201', '200', '204'))){
-                throw new CTCTException('Constant Contact HTTP Request Exception: '.$return['xml']);
+                throw new CFN_Exception('Constant Contact HTTP Request Exception: '.$return['xml']);
             } else {
                 $return = $return;
             }
-        } catch(CTCTException $e) {
+        } catch(CFN_Exception $e) {
             $e->generateError();
         }
         return $return;

@@ -3,7 +3,7 @@
 Plugin Name: Fast Secure Contact Form Newsletter Add-on
 Plugin URI: http://www.katzwebservices.com
 Description: Integrate Constant Contact with Fast Secure Contact Form
-Version: 2.0.2
+Version: 2.0.4
 Author: Katz Web Services, Inc.
 Author URI: http://www.katzwebservices.com
 
@@ -27,11 +27,13 @@ class FSCF_CTCT {
 
     private static $apikey = 'dc584880-333d-4c13-99c3-ac097d633de1'; // Required API Key. Do not change.
     private static $path;
+    var $version;
 
     /**
      * Add actions to load the plugin
      */
     public function __construct() {
+        $this->version = '2.0.4';
         self::$path = plugin_dir_path( __FILE__ );
 
         /**
@@ -81,15 +83,15 @@ class FSCF_CTCT {
         global $ctf_version;
 
         if(defined('FSCF_VERSION')) {
-            $ctf_version = FSCF_VERSION;
+            $test_version = FSCF_VERSION;
         } else if(empty($ctf_version) && $use_option) {
             $si_contact_gb = get_option("si_contact_form_gb");
-            $ctf_version = isset($si_contact_gb['ctf_version']) ? $si_contact_gb['ctf_version'] : null;
+            $test_version = isset($si_contact_gb['ctf_version']) ? $si_contact_gb['ctf_version'] : null;
         }
 
-        $ctf_version = floatval($ctf_version);
+        $test_version = floatval($ctf_version);
 
-        return (!empty($ctf_version) && (version_compare($ctf_version, '4') < 0));
+        return (!empty($test_version) && (version_compare($test_version, '4') < 0));
     }
 
     /**
@@ -105,6 +107,10 @@ class FSCF_CTCT {
      * Show the admin form and settings in FSCF tab
      */
     function adminDisplayForm() {
+
+        // Start outputting page.
+        flush();
+
         $api = self::getAPI();
         $valid = self::validateAPI($api);
 
@@ -117,8 +123,8 @@ class FSCF_CTCT {
     <?php } ?>
     <style>
         .block { display: block; }
-        #tabs-8 > h3 {display: none; }
-        #tabs-8 .fscf_settings_group {
+        #tabs-9 > h3 {display: none; }
+        #tabs-9 .fscf_settings_group {
             border: 0;
             padding:0;
             background: transparent none;
@@ -155,7 +161,7 @@ class FSCF_CTCT {
     <div id="sicf_ctct_settings">
         <h2><?php _e('Constant Contact Account Settings', 'si-contact-form-newsletter'); ?></h2>
         <div class="clear"></div>
-        <form id="ctf_form_settings" action="<?php echo add_query_arg(array('fscf_tab' => 8)); ?>#vCitaSectionAnchor" method="post">
+        <form id="ctf_form_settings" action="<?php echo add_query_arg(array('fscf_tab' => 9)); ?>#vCitaSectionAnchor" method="post">
             <fieldset class="padding-all form-wrap">
                 <?php
 
@@ -183,11 +189,11 @@ class FSCF_CTCT {
             </fieldset>
         </form>
 
-    <?php if($valid) { ?>
+    <?php flush(); if($valid) { ?>
 
         <h2 style="margin-top:20px;"><?php _e(sprintf('Constant Contact Lists (for Form %s)', self::getFormNumber())); ?></h2>
         <div class="clear"></div>
-        <form id="ctf_form_lists" action="<?php echo add_query_arg(array('fscf_tab' => 8)); ?>" method="post">
+        <form id="ctf_form_lists" action="<?php echo add_query_arg(array('fscf_tab' => 9)); ?>" method="post">
             <fieldset class="padding-all">
             <?php self::adminDisplayFormSettings($api); ?>
             <p class="submit" style="padding:0">
@@ -200,6 +206,7 @@ class FSCF_CTCT {
     ?>
     </div>
     <?php
+        flush();
     }
 
     /**
@@ -253,9 +260,10 @@ class FSCF_CTCT {
      */
     function validateAPI($api) {
         $option = get_option('sicf_ctct_valid');
-        if($option) { return true; }
+        if(!empty($option)) { return true; }
         try{
-            $ContactsCollection = new ContactsCollection($api->CTCTRequest);
+
+            $ContactsCollection = new CFN_ContactsCollection($api->CTCTRequest);
             ob_start();
             $response = $api->CTCTRequest->makeRequest($ContactsCollection->uri.'?email=asdasdsasdasdasdasdsadsadasdas@asdmgmsdfdaf.com', 'GET');
             ob_clean();
@@ -314,7 +322,7 @@ class FSCF_CTCT {
 
             check_admin_referer('account_action', 'sicf_ctct_account_form');
             delete_option('sicf_ctct_valid');
-            update_option( 'sicf_ctct', array('username' => $_POST['sicf_ctct']['username'], 'password' => $_POST['sicf_ctct']['password']));
+            add_option( 'sicf_ctct', array('username' => $_POST['sicf_ctct']['username'], 'password' => $_POST['sicf_ctct']['password']), '', 'no');
         }
     }
 
@@ -579,7 +587,7 @@ class FSCF_CTCT {
         $fields['lists'] = (array)$lists;
 
         // Create a contact object in CTCT
-        $Contact = new Contact($fields);
+        $Contact = new CFN_Contact($fields);
 
         // Create the contact
         $AddedContact = $api->addContact(apply_filters( 'sicf_ctct_new_contact', $Contact, $fields, $lists));

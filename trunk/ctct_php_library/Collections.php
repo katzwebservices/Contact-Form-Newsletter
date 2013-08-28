@@ -1,6 +1,6 @@
 <?php
 
-abstract class Collection{
+abstract class CFN_Collection{
     public $CTCTRequest;
     public $uri;
 
@@ -14,12 +14,12 @@ abstract class Collection{
         $this->uri = $CTCTRequest->baseUri.$collectionUri;
     }
 }
-class ActivitiesCollection extends Collection{
+class CFN_ActivitiesCollection extends CFN_Collection{
     public $CTCTRequest;
     public $uri;
 
     /**
-     * ActivitiesCollection constructor
+     * CFN_ActivitiesCollection constructor
      * @param CTCTRequest $CTCTRequest
      */
     public function __construct($CTCTRequest){
@@ -35,15 +35,15 @@ class ActivitiesCollection extends Collection{
         $response =  $this->CTCTRequest->makeRequest($this->uri, 'POST', $postString, 'application/x-www-form-urlencoded');
 		return ($response['info']['http_code'] == 204) ? true : false;
     }
-    
+
 }
 
-class ListsCollection extends Collection{
+class CFN_ListsCollection extends CFN_Collection{
     public $CTCTRequest;
     public $uri;
 
     /**
-     * ListsCollection constructor
+     * CFN_ListsCollection constructor
      * @param CTCTRequest $CTCTRequest
      */
     public function __construct($CTCTRequest){
@@ -51,37 +51,37 @@ class ListsCollection extends Collection{
     }
 
     /**
-     * Get an array of ContactList objects
+     * Get an array of CFN_ContactList objects
      * @param string $page - optional link to a lists page, default is first page
      * @return array
      */
     public function getLists($page=null, $systemLists=false){
         $page = ($page) ? $this->CTCTRequest->baseUri.$page : $this->uri;
-        $listsCollection = array('lists' => array(), 'nextLink' => '');
+        $CFN_ListsCollection = array('lists' => array(), 'nextLink' => '');
         $ignoreArray = array("Active", "Removed", "Do Not Mail");
         $response = $this->CTCTRequest->makeRequest($page, 'GET');
         $parsedResponse = simplexml_load_string($response['xml']);
         foreach ($parsedResponse->entry as $entry){
             if($systemLists == false && !in_array((string)$entry->content->ContactList->Name, $ignoreArray)){
-                $listsCollection['lists'][] = new ContactList(ContactList::createStruct($entry));
+                $CFN_ListsCollection['lists'][] = new CFN_ContactList(CFN_ContactList::createStruct($entry));
             } elseif($systemLists == true) {
-                $listsCollection['lists'][] = new ContactList(ContactList::createStruct($entry)); 
+                $CFN_ListsCollection['lists'][] = new CFN_ContactList(CFN_ContactList::createStruct($entry));
             }
         }
-        $listsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
-        return $listsCollection;
+        $CFN_ListsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
+        return $CFN_ListsCollection;
     }
 
     /**
      *  Add a new list to Constant Contact account
-     *  @param ContactList $List - List object created by
-     *  @return ContactList - newly created ContactList object
+     *  @param CFN_ContactList $List - List object created by
+     *  @return CFN_ContactList - newly created CFN_ContactList object
      */
-    public function addList(ContactList $List){
+    public function addList(CFN_ContactList $List){
         $listXml = $List->createXml();
         $response = $this->CTCTRequest->makeRequest($this->uri, 'POST', $listXml);
         $parsedResponse = simplexml_load_string($response['xml']);
-        return new ContactList(ContactList::createStruct($parsedResponse));
+        return new CFN_ContactList(CFN_ContactList::createStruct($parsedResponse));
     }
 
     /**
@@ -89,31 +89,31 @@ class ListsCollection extends Collection{
      * @param string $url - url to request
      * @return array
      */
-    public function getListMembers(ContactList $List, $page = null){
+    public function getListMembers(CFN_ContactList $List, $page = null){
         $membersCollection = array('members' => array(), 'nextLink' => null);
 		$url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->CTCTRequest->baseUri.$List->link.'/members';
         $response = $this->CTCTRequest->makeRequest($url, 'GET');
         $parsedResponse = simplexml_load_string($response['xml']);
         foreach($parsedResponse->entry as $entry){
-            $membersCollection['members'][] = new Contact(ContactList::createMemberStruct($entry));
+            $membersCollection['members'][] = new CFN_Contact(CFN_ContactList::createMemberStruct($entry));
         }
         $membersCollection['nextLink'] = Utility::findNextLink($parsedResponse);
         return $membersCollection;
     }
 
     /**
-     *  Get full details for a ContactList
+     *  Get full details for a CFN_ContactList
      *  @param string $url - address to a list
-     *  @return ContactList
+     *  @return CFN_ContactList
      */
     public function getListDetails($url){
         $response = $this->CTCTRequest->makeRequest($url, 'GET');
         $parsedResponse = simplexml_load_string($response['xml']);
-        return new ContactList(ContactList::createStruct($parsedResponse));
+        return new CFN_ContactList(CFN_ContactList::createStruct($parsedResponse));
     }
 
     /**
-     *  Delete a ContactList from an account
+     *  Delete a CFN_ContactList from an account
      *  @param string $url - address to a list
      *  @return bool - true is successful, else false
      */
@@ -123,23 +123,23 @@ class ListsCollection extends Collection{
     }
 
     /**
-     *  Update a ContactList
+     *  Update a CFN_ContactList
      *  @param string $url - address to a list
      *  @return bool - true is successful, else false
      */
-    public function updateList(ContactList $List){
+    public function updateList(CFN_ContactList $List){
         $listXml = $List->createXml();
         $response = $this->CTCTRequest->makeRequest($this->CTCTRequest->baseUri.$List->link, 'PUT', $listXml);
         return ($response['info']['http_code'] == 204) ? true : false;
     }
 }
 
-class ContactsCollection extends Collection{
+class CFN_ContactsCollection extends CFN_Collection{
     public $CTCTRequest;
     public $uri;
 
     /**
-     * ContactsCollection constructor
+     * CFN_ContactsCollection constructor
      * @param CTCTRequest  $CTCTRequest
      */
     public function __construct($CTCTRequest){
@@ -152,14 +152,14 @@ class ContactsCollection extends Collection{
      */
     public function getContacts($page=null){
         $page = ($page) ? $this->CTCTRequest->baseUri.$page : $this->uri;
-        $contactsCollection = array('contacts' => array(), 'nextLink' => '');
+        $CFN_ContactsCollection = array('contacts' => array(), 'nextLink' => '');
         $response = $this->CTCTRequest->makeRequest($page, 'GET');
         $parsedResponse = simplexml_load_string($response['xml']);
         foreach ( $parsedResponse->entry as $entry){
-            $contactsCollection['contacts'][] = new Contact(Contact::createStruct($entry));
+            $CFN_ContactsCollection['contacts'][] = new CFN_Contact(CFN_Contact::createStruct($entry));
         }
-        $contactsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
-        return $contactsCollection;    
+        $CFN_ContactsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
+        return $CFN_ContactsCollection;
     }
 
     /**
@@ -170,7 +170,7 @@ class ContactsCollection extends Collection{
     public function getContactDetails($url){
         $response = $this->CTCTRequest->makeRequest($url, 'GET');
         $parsedResponse = simplexml_load_string($response['xml']);
-        return new Contact(Contact::createStruct($parsedResponse));
+        return new CFN_Contact(CFN_Contact::createStruct($parsedResponse));
     }
 
     /**
@@ -197,11 +197,11 @@ class ContactsCollection extends Collection{
      * @param Contact $Contact - Contact object to add
      * @return Contact
      */
-    public function addContact(Contact $Contact){
+    public function addContact(CFN_Contact $Contact){
         $contactXml = $Contact->createXml();
         $response = $this->CTCTRequest->makeRequest($this->uri, 'POST', $contactXml);
         $parsedResponse = simplexml_load_string($response['xml']);
-        return new Contact(Contact::createStruct($parsedResponse));
+        return new CFN_Contact(CFN_Contact::createStruct($parsedResponse));
     }
 
     /**
@@ -209,7 +209,7 @@ class ContactsCollection extends Collection{
      * @param Contact $Contact
      * @return bool - true is successful, else false
      */
-    public function updateContact(Contact $Contact){
+    public function updateContact(CFN_Contact $Contact){
         $contactXml = $Contact->createXml();
         $response = $this->CTCTRequest->makeRequest($this->CTCTRequest->baseUri.$Contact->link, 'PUT', $contactXml);
         return ($response['info']['http_code'] == 204) ? true : false;
@@ -236,7 +236,7 @@ class ContactsCollection extends Collection{
         $returnArray = array();
         if ($parsedResponse->entry){
             foreach ($parsedResponse->entry as $contact){
-                $returnArray[] = new Contact(Contact::createStruct($contact));
+                $returnArray[] = new CFN_Contact(CFN_Contact::createStruct($contact));
             }
         } else { $returnArray = false; }
         return $returnArray;
@@ -245,7 +245,7 @@ class ContactsCollection extends Collection{
     /**
      * Search for contacts that have been updated since a specific date
      * @param string  $date
-     * @param ContactList $List
+     * @param CFN_ContactList $List
      * @return array
      */
     public function searchContactsByLastUpdate($List, $date){
@@ -262,7 +262,7 @@ class ContactsCollection extends Collection{
     }
 }
 
-class CampaignsCollection extends Collection{
+class CFN_CampaignsCollection extends CFN_Collection{
     public $CTCTRequest;
     public $uri;
 
@@ -281,14 +281,14 @@ class CampaignsCollection extends Collection{
      */
     public function getCampaigns($page=null){
         $page = ($page) ? $this->CTCTRequest->baseUri.$page : $this->uri;
-        $campaignsCollection = array('campaigns' => array(), 'nextLink' => '');
+        $CFN_CampaignsCollection = array('campaigns' => array(), 'nextLink' => '');
         $response = $this->CTCTRequest->makeRequest($page, 'GET');
         $parsedResponse = simplexml_load_string($response['xml']);
         foreach ($parsedResponse->entry as $entry){
-            $campaignsCollection['campaigns'][] = new Campaign(Campaign::createOverviewStruct($entry));
+            $CFN_CampaignsCollection['campaigns'][] = new Campaign(Campaign::createOverviewStruct($entry));
         }
-        $campaignsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
-        return $campaignsCollection;
+        $CFN_CampaignsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
+        return $CFN_CampaignsCollection;
     }
 
     /**
@@ -320,20 +320,20 @@ class CampaignsCollection extends Collection{
     public function getCampaignsByStatus($status, $page = null){
         $statusList = array('sent', 'draft', 'running', 'scheduled');
         $status = strtolower($status);
-        $campaignsCollection = array('campaigns' => array(), 'nextLink' => '');
+        $CFN_CampaignsCollection = array('campaigns' => array(), 'nextLink' => '');
         try{
             if(!in_array($status, $statusList)){throw new CTCTException("Campaign status '".$status."' is not a valid option");}
-			$url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->uri.'?status='.$status; 
+			$url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->uri.'?status='.$status;
             $response = $this->CTCTRequest->makeRequest($url, 'GET');
             $parsedResponse = simplexml_load_string($response['xml']);
             foreach ($parsedResponse->entry as $entry){
-                $campaignsCollection['campaigns'][] = new Campaign(Campaign::createOverviewStruct($entry));
+                $CFN_CampaignsCollection['campaigns'][] = new Campaign(Campaign::createOverviewStruct($entry));
             }
-            $campaignsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
+            $CFN_CampaignsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
         } catch (CTCTException $e) {
             $e->generateError();
         }
-        return ($campaignsCollection['campaigns']) ? $campaignsCollection : false;
+        return ($CFN_CampaignsCollection['campaigns']) ? $CFN_CampaignsCollection : false;
     }
 
     /**
@@ -415,12 +415,12 @@ class CampaignsCollection extends Collection{
     }
 }
 
-class LibraryCollection extends Collection{
+class CFN_LibraryCollection extends CFN_Collection{
     public $CTCTRequest;
     public $uri;
 
     /**
-     * LibraryCollection constructor
+     * CFN_LibraryCollection constructor
      * @param  $CTCTRequest
      */
     public function __construct($CTCTRequest){
@@ -567,12 +567,12 @@ class LibraryCollection extends Collection{
 
 }
 
-class SettingsCollection extends Collection{
+class CFN_SettingsCollection extends CFN_Collection{
     public $CTCTRequest;
     public $uri;
 
     /**
-     * SettingsCollection constructor
+     * CFN_SettingsCollection constructor
      * @param  $CTCTRequest
      */
     public function __construct($CTCTRequest){
@@ -597,12 +597,12 @@ class SettingsCollection extends Collection{
     }
 }
 
-class EventsCollection extends Collection{
+class CFN_EventsCollection extends CFN_Collection{
     public $CTCTRequest;
     public $uri;
 
     /**
-     * EventsCollection constructor
+     * CFN_EventsCollection constructor
      * @param CTCTRequest $CTCTRequest
      */
     public function __construct($CTCTRequest){
@@ -616,14 +616,14 @@ class EventsCollection extends Collection{
      */
     public function getEvents($page=null){
         $url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->uri;
-        $eventsCollection = array('events' => array(), 'nextLink' => '');
+        $CFN_EventsCollection = array('events' => array(), 'nextLink' => '');
         $response = $this->CTCTRequest->makeRequest($url, 'GET');
         $parsedResponse = simplexml_load_string($response['xml'], null, null, "http://www.w3.org/2005/Atom");
         foreach($parsedResponse->entry as $entry){
-            $eventsCollection['events'][] = new Event(Event::createStruct($entry));
+            $CFN_EventsCollection['events'][] = new Event(Event::createStruct($entry));
         }
-        $eventsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
-        return $eventsCollection;
+        $CFN_EventsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
+        return $CFN_EventsCollection;
     }
 
     /**

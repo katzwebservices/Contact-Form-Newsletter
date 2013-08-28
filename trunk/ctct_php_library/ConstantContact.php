@@ -1,7 +1,7 @@
 <?php
 require_once('Authentication.php'); // OAuth & Basic Authentication classes (CTCTDataStore, CTCTRequest, OAuthToken...)
-require_once('Collections.php'); // Constant Contact collection resource classes (ContactsCollection, ListsCollection..)
-require_once('Components.php'); // Constant Contact object classes (Contact, List, Campaign, Event...)
+require_once('Collections.php'); // Constant Contact collection resource classes (CFN_ContactsCollection, ListsCollection..)
+require_once('Components.php'); // Constant Contact object classes (CFN_Contact, List, Campaign, Event...)
 
 class FSCFConstantContact{
     public $apiKey;
@@ -27,9 +27,9 @@ class FSCFConstantContact{
         try{
         $this->authType = strtolower($authType);
         if($this->authType != 'basic' && $this->authType != 'oauth' && $this->authType != 'oauth2'){
-            throw new CTCTException('Authentication Error: type '.$this->authType.' is not valid');
+            throw new CFN_CTCTException('Authentication Error: type '.$this->authType.' is not valid');
         };
-        $this->CTCTRequest = new CTCTRequest($this->authType, $apiKey, $username, $param);
+        $this->CTCTRequest = new CFN_CTCTRequest($this->authType, $apiKey, $username, $param);
 
         } catch (CTCTException $e){
             $e->generateError();
@@ -43,7 +43,7 @@ class FSCFConstantContact{
      * @return array - Up to 50 Lists and a link to the next page if one exists
      */
     public function getLists($page=null, $systemLists=false){
-        $ListsCollection = new ListsCollection($this->CTCTRequest);
+        $ListsCollection = new CFN_ListsCollection($this->CTCTRequest);
         return $ListsCollection->getLists($page, $systemLists);
     }
 
@@ -53,8 +53,8 @@ class FSCFConstantContact{
 	 * @param string $page - optional 'nextLink' returned from a previous getListMembers() call
      * @return array
      */
-    public function getListMembers(ContactList $List, $page=null){
-        $ListsCollection = new ListsCollection($this->CTCTRequest);
+    public function getListMembers(CFN_ContactList $List, $page=null){
+        $ListsCollection = new CFN_ListsCollection($this->CTCTRequest);
         if($page){$url = $this->CTCTRequest->baseUri;}
         return $ListsCollection->getListMembers($List, $page);
     }
@@ -64,8 +64,8 @@ class FSCFConstantContact{
      * @param ContactList $item - ContactList object
      * @return ContactList
      */
-    public function getListDetails(ContactList $List){
-        $ListsCollection = new ListsCollection($this->CTCTRequest);
+    public function getListDetails(CFN_ContactList $List){
+        $ListsCollection = new CFN_ListsCollection($this->CTCTRequest);
         return $ListsCollection->getListDetails($this->CTCTRequest->baseUri.$List->link);
     }
 
@@ -74,8 +74,8 @@ class FSCFConstantContact{
      * @param ContactList $List - ContactList object
      * @return ContactList
      */
-    public function addList(ContactList $List){
-        $ListsCollection = new ListsCollection($this->CTCTRequest);
+    public function addList(CFN_ContactList $List){
+        $ListsCollection = new CFN_ListsCollection($this->CTCTRequest);
         return $ListsCollection->addList($List);
     }
 
@@ -84,8 +84,8 @@ class FSCFConstantContact{
      * @param ContactList $List - ContactList object
      * @return bool
      */
-    public function deleteList(ContactList $List){
-        $ListsCollection = new ListsCollection($this->CTCTRequest);
+    public function deleteList(CFN_ContactList $List){
+        $ListsCollection = new CFN_ListsCollection($this->CTCTRequest);
         return $ListsCollection->deleteList($this->CTCTRequest->baseUri.$List->link);
     }
 
@@ -94,8 +94,8 @@ class FSCFConstantContact{
      * @param ContactList $List - ContactList object
      * @return bool
      */
-    public function updateList(ContactList $List){
-        $ListsCollection = new ListsCollection($this->CTCTRequest);
+    public function updateList(CFN_ContactList $List){
+        $ListsCollection = new CFN_ListsCollection($this->CTCTRequest);
         return $ListsCollection->updateList($List);
     }
 
@@ -104,8 +104,8 @@ class FSCFConstantContact{
      * @param Contact $Contact  - Contact Object
      * @return Contact
      */
-    public function addContact(Contact $Contact){
-        $ContactsCollection = new ContactsCollection($this->CTCTRequest);
+    public function addContact(CFN_Contact $Contact){
+        $ContactsCollection = new CFN_ContactsCollection($this->CTCTRequest);
         return $ContactsCollection->addContact($Contact);
     }
 
@@ -115,7 +115,7 @@ class FSCFConstantContact{
      * @return array - Up to 50 Contacts and a link to the next page if one exists
      */
     public function getContacts($page=null){
-        $ContactsCollection = new ContactsCollection($this->CTCTRequest);
+        $ContactsCollection = new CFN_ContactsCollection($this->CTCTRequest);
         return $ContactsCollection->getContacts($page);
     }
 
@@ -124,8 +124,8 @@ class FSCFConstantContact{
      * @param Contact $Contact - Contact object
      * @return Contact
      */
-    public function getContactDetails(Contact $Contact){
-        $ContactsCollection = new ContactsCollection($this->CTCTRequest);
+    public function getContactDetails(CFN_Contact $Contact){
+        $ContactsCollection = new CFN_ContactsCollection($this->CTCTRequest);
         return $ContactsCollection->getContactDetails($this->CTCTRequest->baseUri.$Contact->link);
     }
 
@@ -135,8 +135,8 @@ class FSCFConstantContact{
      * @param string $page - optional 'nextLink' from previous getContactOpens call
      * @return array - Up to 50 CampaignEvents and a link to the next page if one exists
      */
-    public function getContactOpens(Contact $Contact, $page=null){
-        $ContactsCollection = new ContactsCollection($this->CTCTRequest);
+    public function getContactOpens(CFN_Contact $Contact, $page=null){
+        $ContactsCollection = new CFN_ContactsCollection($this->CTCTRequest);
         $url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->CTCTRequest->baseUri.$Contact->link.'/events/opens';
         return $ContactsCollection->getContactEvents($url, 'OpenEvent');
     }
@@ -147,8 +147,8 @@ class FSCFConstantContact{
      * @param string $page - optional 'nextLink' from previous getContactClicks call
      * @return array - Up to 50 CampaignEvents and a link to the next page if one exists
      */
-    public function getContactClicks(Contact $Contact, $page=null){
-        $ContactsCollection = new ContactsCollection($this->CTCTRequest);
+    public function getContactClicks(CFN_Contact $Contact, $page=null){
+        $ContactsCollection = new CFN_ContactsCollection($this->CTCTRequest);
         $url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->CTCTRequest->baseUri.$Contact->link.'/events/clicks';
         return $ContactsCollection->getContactEvents($url, 'ClickEvent');
     }
@@ -159,8 +159,8 @@ class FSCFConstantContact{
      * @param string $page - optional 'nextLink' from previous getContactForwards call
      * @return array - Up to 50 CampaignEvents and a link to the next page if one exists
      */
-    public function getContactForwards(Contact $Contact, $page=null){
-        $ContactsCollection = new ContactsCollection($this->CTCTRequest);
+    public function getContactForwards(CFN_Contact $Contact, $page=null){
+        $ContactsCollection = new CFN_ContactsCollection($this->CTCTRequest);
         $url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->CTCTRequest->baseUri.$Contact->link.'/events/forwards';
         return $ContactsCollection->getContactEvents($url, 'ForwardEvent');
     }
@@ -171,8 +171,8 @@ class FSCFConstantContact{
      * @param string $page - optional 'nextLink' from previous getContactBounces call
      * @return array - Up to 50 CampaignEvents and a link to the next page if one exists
      */
-    public function getContactBounces(Contact $Contact, $page=null){
-        $ContactsCollection = new ContactsCollection($this->CTCTRequest);
+    public function getContactBounces(CFN_Contact $Contact, $page=null){
+        $ContactsCollection = new CFN_ContactsCollection($this->CTCTRequest);
         $url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->CTCTRequest->baseUri.$Contact->link.'/events/bounces';
         return $ContactsCollection->getContactEvents($url, 'BounceEvent');
     }
@@ -183,8 +183,8 @@ class FSCFConstantContact{
      * @param string $page - optional 'nextLink' from previous getContactOptOuts call
      * @return array - Up to 50 CampaignEvents and a link to the next page if one exists
      */
-    public function getContactOptOuts(Contact $Contact, $page=null){
-        $ContactsCollection = new ContactsCollection($this->CTCTRequest);
+    public function getContactOptOuts(CFN_Contact $Contact, $page=null){
+        $ContactsCollection = new CFN_ContactsCollection($this->CTCTRequest);
         $url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->CTCTRequest->baseUri.$Contact->link.'/events/optouts';
         return $ContactsCollection->getContactEvents($url, 'OptoutEvent');
     }
@@ -195,8 +195,8 @@ class FSCFConstantContact{
      * @param string $page - optional 'nextLink' from previous getContactSends call
      * @return array - Up to 50 CampaignEvents and a link to the next page if one exists
      */
-    public function getContactSends(Contact $Contact, $page=null){
-        $ContactsCollection = new ContactsCollection($this->CTCTRequest);
+    public function getContactSends(CFN_Contact $Contact, $page=null){
+        $ContactsCollection = new CFN_ContactsCollection($this->CTCTRequest);
         $url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->CTCTRequest->baseUri.$Contact->link.'/events/sends';
         return $ContactsCollection->getContactEvents($url, 'SentEvent');
     }
@@ -206,8 +206,8 @@ class FSCFConstantContact{
      * @param Contact $Contact - Contact object
      * @return Contact
      */
-    public function updateContact(Contact $Contact){
-        $ContactsCollection = new ContactsCollection($this->CTCTRequest);
+    public function updateContact(CFN_Contact $Contact){
+        $ContactsCollection = new CFN_ContactsCollection($this->CTCTRequest);
         return $ContactsCollection->updateContact($Contact);
     }
 
@@ -216,8 +216,8 @@ class FSCFConstantContact{
      * @param Contact $Contact - Contact
      * @return bool
      */
-    public function deleteContact(Contact $Contact){
-        $ContactsCollection = new ContactsCollection($this->CTCTRequest);
+    public function deleteContact(CFN_Contact $Contact){
+        $ContactsCollection = new CFN_ContactsCollection($this->CTCTRequest);
         return $ContactsCollection->deleteContact($this->CTCTRequest->baseUri.$Contact->link);
     }
 
@@ -236,7 +236,7 @@ class FSCFConstantContact{
                 $ext .= ($i==0) ? '?email='.$loweredAddress : '&email='.$loweredAddress;
             }
         }
-        $ContactsCollection = new ContactsCollection($this->CTCTRequest);
+        $ContactsCollection = new CFN_ContactsCollection($this->CTCTRequest);
 
         return $ContactsCollection->searchContactsByEmail($ext);
     }
@@ -247,8 +247,8 @@ class FSCFConstantContact{
      * @param  string $date - Last updated date to search from
      * @return array - Up to 50 contacts and a link to the next page if one exists
      */
-    public function searchContactsByLastUpdate(ContactList $List, $date){
-        $ContactsCollection = new ContactsCollection($this->CTCTRequest);
+    public function searchContactsByLastUpdate(CFN_ContactList $List, $date){
+        $ContactsCollection = new CFN_ContactsCollection($this->CTCTRequest);
         return $ContactsCollection->searchContactsByLastUpdate($List, $date);
     }
 
@@ -258,7 +258,7 @@ class FSCFConstantContact{
      * @return array - Up to 50 Campaigns and a link to the next page if one exists
      */
     public function getCampaigns($page=null){
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         return $CampaignsCollection->getCampaigns($page);
     }
 
@@ -269,7 +269,7 @@ class FSCFConstantContact{
      */
 
     public function getCampaignByID($ID){
-    	$CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+    	$CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
     	return $CampaignsCollection->getCampaignDetails($this->CTCTRequest->baseUri."/ws/customers/". $this->CTCTRequest->username . "/campaigns/" . $ID);
     }
 
@@ -277,8 +277,8 @@ class FSCFConstantContact{
      * Get full details for a Campaign
      * @param Campaign $item - Campaign object
      */
-    public function getCampaignDetails(Campaign $Campaign){
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+    public function getCampaignDetails(CFN_Campaign $Campaign){
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         return $CampaignsCollection->getCampaignDetails($this->CTCTRequest->baseUri.$Campaign->link);
     }
 
@@ -288,8 +288,8 @@ class FSCFConstantContact{
      * @param string  $eventType - Sends, Forwards,  Bounces, OptOuts, Opens
      * @return array
      */
-    public function getCampaignEvents(Campaign $Campaign, $eventType){
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+    public function getCampaignEvents(CFN_Campaign $Campaign, $eventType){
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         return $CampaignsCollection->getCampaignEvents($Campaign, $eventType);
     }
 
@@ -299,8 +299,8 @@ class FSCFConstantContact{
      * @param string $page - optional 'nextLink' from previous getContactOpens call
      * @return array - Up to 50 CampaignEvents and a link to the next page if one exists
      */
-    public function getCampaignOpens(Campaign $Campaign, $page=null){
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+    public function getCampaignOpens(CFN_Campaign $Campaign, $page=null){
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         $url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->CTCTRequest->baseUri.$Campaign->link.'/events/opens';
         return $CampaignsCollection->getCampaignEvents($url, 'OpenEvent');
     }
@@ -311,8 +311,8 @@ class FSCFConstantContact{
      * @param string $page - optional 'nextLink' from previous getContactForwards call
      * @return array - Up to 50 CampaignEvents and a link to the next page if one exists
      */
-    public function getCampaignForwards(Campaign $Campaign, $page=null){
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+    public function getCampaignForwards(CFN_Campaign $Campaign, $page=null){
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         $url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->CTCTRequest->baseUri.$Campaign->link.'/events/forwards';
         return $CampaignsCollection->getCampaignEvents($url, 'ForwardEvent');
     }
@@ -323,8 +323,8 @@ class FSCFConstantContact{
      * @param string $page - optional 'nextLink' from previous getContactBounces call
      * @return array - Up to 50 CampaignEvents and a link to the next page if one exists
      */
-    public function getCampaignBounces(Campaign $Campaign, $page=null){
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+    public function getCampaignBounces(CFN_Campaign $Campaign, $page=null){
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         $url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->CTCTRequest->baseUri.$Campaign->link.'/events/bounces';
         return $CampaignsCollection->getCampaignEvents($url, 'BounceEvent');
     }
@@ -335,8 +335,8 @@ class FSCFConstantContact{
      * @param string $page - optional 'nextLink' from previous getContactOptOuts call
      * @return array - Up to 50 CampaignEvents and a link to the next page if one exists
      */
-    public function getCampaignOptOuts(Campaign $Campaign, $page=null){
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+    public function getCampaignOptOuts(CFN_Campaign $Campaign, $page=null){
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         $url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->CTCTRequest->baseUri.$Campaign->link.'/events/optouts';
         return $CampaignsCollection->getCampaignEvents($url, 'OptoutEvent');
     }
@@ -347,8 +347,8 @@ class FSCFConstantContact{
      * @param string $page - optional 'nextLink' from previous getContactSends call
      * @return array - Up to 50 CampaignEvents and a link to the next page if one exists
      */
-    public function getCampaignSends(Campaign $Campaign, $page=null){
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+    public function getCampaignSends(CFN_Campaign $Campaign, $page=null){
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         $url = ($page) ? $this->CTCTRequest->baseUri.$page : $this->CTCTRequest->baseUri.$Campaign->link.'/events/sends';
         return $CampaignsCollection->getCampaignEvents($url, 'SentEvent');
     }
@@ -359,7 +359,7 @@ class FSCFConstantContact{
      * @return array - Up to 50 Campaigns and a link to the next page if one exists
      */
     public function getCampaignsByStatus($status, $page=null){
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         return $CampaignsCollection->getCampaignsByStatus($status, $page);
     }
 
@@ -369,8 +369,8 @@ class FSCFConstantContact{
      * @param string $time - Date/Time for email to be sent
      * @return bool - true if successful, else false
      */
-    public function scheduleCampaign(Campaign $Campaign, $time){
-        $CampaignCollection = new CampaignsCollection($this->CTCTRequest);
+    public function scheduleCampaign(CFN_Campaign $Campaign, $time){
+        $CampaignCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         return $CampaignCollection->scheduleCampaign($Campaign, $time);
     }
 
@@ -379,8 +379,8 @@ class FSCFConstantContact{
      * @param Campaign $Campaign - Campaign to get a schedule for
      * @return bool|Schedule - returns Schedule if found, else false
      */
-    public function getCampaignSchedule(Campaign $Campaign){
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+    public function getCampaignSchedule(CFN_Campaign $Campaign){
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         return $CampaignsCollection->getSchedule($Campaign);
     }
 
@@ -389,8 +389,8 @@ class FSCFConstantContact{
      * @param Campaign $Campaign - Campaign to delete schedule for
      * @return bool - true if successful, else false
      */
-    public function deleteCampaignSchedule(Campaign $Campaign){
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+    public function deleteCampaignSchedule(CFN_Campaign $Campaign){
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         return $CampaignsCollection->deleteSchedule($Campaign);
     }
 
@@ -398,8 +398,8 @@ class FSCFConstantContact{
      * Delete an email Campaign
      * @param Campaign $Campaign - Campaign object
      */
-    public function deleteCampaign(Campaign $Campaign){
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+    public function deleteCampaign(CFN_Campaign $Campaign){
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         return $CampaignsCollection->deleteCampaign($this->CTCTRequest->baseUri.$Campaign->link);
     }
 
@@ -409,11 +409,11 @@ class FSCFConstantContact{
      * @param VerifiedAddress $replyEmail - OPTIONAL: reply email if different than fromEmail
      * @return Campaign
      */
-    public function addCampaign(Campaign $Campaign, VerifiedAddress $fromEmail, VerifiedAddress $replyEmail = null){
+    public function addCampaign(CFN_Campaign $Campaign, CFN_VerifiedAddress $fromEmail, CFN_VerifiedAddress $replyEmail = null){
         $replyEmail = ($replyEmail) ? $replyEmail : $fromEmail;
         $Campaign->fromAddress = $fromEmail;
         $Campaign->replyAddress = $replyEmail;
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         return $CampaignsCollection->addCampaign($Campaign);
     }
 
@@ -422,8 +422,8 @@ class FSCFConstantContact{
      * @param Campaign $Campaign - Campaign to update
      * @return
      */
-    public function updateCampaign(Campaign $Campaign){
-        $CampaignsCollection = new CampaignsCollection($this->CTCTRequest);
+    public function updateCampaign(CFN_Campaign $Campaign){
+        $CampaignsCollection = new CFN_CampaignsCollection($this->CTCTRequest);
         return $CampaignsCollection->updateCampaign($Campaign);
     }
 
@@ -431,8 +431,8 @@ class FSCFConstantContact{
      * @param  Folder $Folder - Folder object
      * @return Folder - Folder object
      */
-    public function addFolder(Folder $Folder){
-        $LibraryCollection = new LibraryCollection($this->CTCTRequest);
+    public function addFolder(CFN_Folder $Folder){
+        $LibraryCollection = new CFN_LibraryCollection($this->CTCTRequest);
         return $LibraryCollection->addFolder($Folder);
     }
 
@@ -442,7 +442,7 @@ class FSCFConstantContact{
      * @return array - Up to 50 Folders and a link to the next page if one exists
      */
     public function getFolders($page=null){
-        $LibraryCollection = new LibraryCollection($this->CTCTRequest);
+        $LibraryCollection = new CFN_LibraryCollection($this->CTCTRequest);
         return $LibraryCollection->getFolders($page);
     }
 
@@ -452,7 +452,7 @@ class FSCFConstantContact{
      * @return array - All images contained within the folder
      */
     public function getImagesFromFolder($folder){
-        $LibraryCollection = new LibraryCollection($this->CTCTRequest);
+        $LibraryCollection = new CFN_LibraryCollection($this->CTCTRequest);
         return $LibraryCollection->getImagesFromFolder($this->CTCTRequest->baseUri.$folder->link.'/images');
     }
 
@@ -461,8 +461,8 @@ class FSCFConstantContact{
      * @param Image  $image - image object
      * @return Image - Image object
      */
-    public function getImageDetails(Image $Image){
-        $LibraryCollection = new LibraryCollection($this->CTCTRequest);
+    public function getImageDetails(CFN_Image $Image){
+        $LibraryCollection = new CFN_LibraryCollection($this->CTCTRequest);
         return $LibraryCollection->getImageDetails($this->CTCTRequest->baseUri.$Image->link);
     }
 
@@ -471,8 +471,8 @@ class FSCFConstantContact{
      * @param Folder $folder - Folder to upload image to
      * @return Image - created Image object
      */
-    public function uploadImage($imageLocation, Folder $Folder){
-        $LibraryCollection = new LibraryCollection($this->CTCTRequest);
+    public function uploadImage($imageLocation, CFN_Folder $Folder){
+        $LibraryCollection = new CFN_LibraryCollection($this->CTCTRequest);
         return $LibraryCollection->uploadImage($imageLocation, $this->CTCTRequest->baseUri.$Folder->link);
     }
 
@@ -481,8 +481,8 @@ class FSCFConstantContact{
      * @param Image $Image - Image object
      * @return bool - true if successful, else false
      */
-    public function deleteImage(Image $Image){
-        $LibraryCollection = new LibraryCollection($this->CTCTRequest);
+    public function deleteImage(CFN_Image $Image){
+        $LibraryCollection = new CFN_LibraryCollection($this->CTCTRequest);
         return $LibraryCollection->deleteImage($this->CTCTRequest->baseUri.$Image->link);
     }
 
@@ -491,8 +491,8 @@ class FSCFConstantContact{
      * @param Folder $Folder - Folder object
      * @return bool - true if successful, else false
      */
-    public function deleteImagesFromFolder(Folder $Folder){
-        $LibraryCollection = new LibraryCollection($this->CTCTRequest);
+    public function deleteImagesFromFolder(CFN_Folder $Folder){
+        $LibraryCollection = new CFN_LibraryCollection($this->CTCTRequest);
         return $LibraryCollection->deleteImagesFromFolder($this->CTCTRequest->baseUri.$Folder->link.'/images');
     }
 
@@ -501,7 +501,7 @@ class FSCFConstantContact{
      * @return array - Up to 50 Verified addresses and a link to the next page if one exists
      */
     public function getVerifiedAddresses($page=null){
-        $SettingsCollection = new SettingsCollection($this->CTCTRequest);
+        $SettingsCollection = new CFN_SettingsCollection($this->CTCTRequest);
         return $SettingsCollection->getAddresses($page);
     }
 
@@ -511,7 +511,7 @@ class FSCFConstantContact{
      * @return array - Up to 50 Images and a link to the next page if one exists
      */
     public function getEvents($page=null){
-        $EventsCollection = new EventsCollection($this->CTCTRequest);
+        $EventsCollection = new CFN_EventsCollection($this->CTCTRequest);
         return $EventsCollection->getEvents($page);
     }
 
@@ -520,8 +520,8 @@ class FSCFConstantContact{
      * @param  Event Event - Event object to get details for
      * @return Event
      */
-    public function getEventDetails(Event $Event){
-        $EventsCollection = new EventsCollection($this->CTCTRequest);
+    public function getEventDetails(CFN_Event $Event){
+        $EventsCollection = new CFN_EventsCollection($this->CTCTRequest);
         return $EventsCollection->getEventDetails($this->CTCTRequest->baseUri.$Event->link);
     }
 
@@ -530,8 +530,8 @@ class FSCFConstantContact{
      * @param Event $Event - Event Object
      * @return array - up to 50 registrants and a link to the next page if one exists
      */
-    public function getRegistrants(Event $Event, $page = null){
-        $EventsCollection = new EventsCollection($this->CTCTRequest);
+    public function getRegistrants(CFN_Event $Event, $page = null){
+        $EventsCollection = new CFN_EventsCollection($this->CTCTRequest);
 		if($page !== null)
 		{
 			return $EventsCollection->getRegistrants($this->CTCTRequest->baseUri.$page);
@@ -544,8 +544,8 @@ class FSCFConstantContact{
      * @param Registrant $Registrant - Registrant Object
      * @return Registrant
      */
-    public function getRegistrantDetails(Registrant $Registrant){
-        $EventsCollection = new EventsCollection($this->CTCTRequest);
+    public function getRegistrantDetails(CFN_Registrant $Registrant){
+        $EventsCollection = new CFN_EventsCollection($this->CTCTRequest);
         return $EventsCollection->getRegistrantDetails($this->CTCTRequest->baseUri.$Registrant->link);
     }
 
@@ -555,7 +555,7 @@ class FSCFConstantContact{
 	 * @return bool
      */
     public function bulkAddContacts($postString){
-        $ActivitiesCollection = new ActivitiesCollection($this->CTCTRequest);
+        $ActivitiesCollection = new CFN_ActivitiesCollection($this->CTCTRequest);
         return $ActivitiesCollection->bulkAddContacts($postString);
 
     }
