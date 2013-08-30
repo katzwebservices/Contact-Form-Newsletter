@@ -3,7 +3,7 @@
 Plugin Name: Fast Secure Contact Form Newsletter Add-on
 Plugin URI: http://www.katzwebservices.com
 Description: Integrate Constant Contact with Fast Secure Contact Form
-Version: 2.0.4
+Version: 2.0.5
 Author: Katz Web Services, Inc.
 Author URI: http://www.katzwebservices.com
 
@@ -33,7 +33,7 @@ class FSCF_CTCT {
      * Add actions to load the plugin
      */
     public function __construct() {
-        $this->version = '2.0.4';
+        $this->version = '2.0.5';
         self::$path = plugin_dir_path( __FILE__ );
 
         /**
@@ -123,7 +123,7 @@ class FSCF_CTCT {
     <?php } ?>
     <style>
         .block { display: block; }
-        #tabs-9 > h3 {display: none; }
+        #tabs-9 > h3 { display: none; }
         #tabs-9 .fscf_settings_group {
             border: 0;
             padding:0;
@@ -193,7 +193,7 @@ class FSCF_CTCT {
 
         <h2 style="margin-top:20px;"><?php _e(sprintf('Constant Contact Lists (for Form %s)', self::getFormNumber())); ?></h2>
         <div class="clear"></div>
-        <form id="ctf_form_lists" action="<?php echo add_query_arg(array('fscf_tab' => 9)); ?>" method="post">
+        <form id="ctf_form_lists" action="<?php echo add_query_arg(array('fscf_tab' => 9)); ?>#vCitaSectionAnchor" method="post">
             <fieldset class="padding-all">
             <?php self::adminDisplayFormSettings($api); ?>
             <p class="submit" style="padding:0">

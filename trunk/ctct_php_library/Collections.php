@@ -9,7 +9,7 @@ abstract class CFN_Collection{
      * @param CTCTRequest $CTCTRequest
      * @param string $collectionUri - URI for a collection
      */
-    public function __construct(CTCTRequest $CTCTRequest, $collectionUri) {
+    public function __construct(CFN_CTCTRequest $CTCTRequest, $collectionUri) {
         $this->CTCTRequest = $CTCTRequest;
         $this->uri = $CTCTRequest->baseUri.$collectionUri;
     }
