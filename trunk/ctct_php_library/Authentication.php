@@ -1135,11 +1135,11 @@ class CFN_CTCTRequest{
             curl_close($curl);
 
             if(!in_array($return['info']['http_code'], array('201', '200', '204'))){
-                throw new CFN_Exception('Constant Contact HTTP Request Exception: '.$return['xml']);
+                throw new Exception('Constant Contact HTTP Request Exception: '.$return['xml']);
             } else {
                 $return = $return;
             }
-        } catch(CFN_Exception $e) {
+        } catch(Exception $e) {
             $e->generateError();
         }
         return $return;
