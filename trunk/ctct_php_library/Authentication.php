@@ -10,7 +10,7 @@ class CFN_OAuthException extends Exception{
     private function logError($errorText, $file="error.log"){
         $message = "Constant Contact OAuth Exception -- ".date("F j, Y, g:ia")."\n".$errorText."\n";
         $message .= "From: ".$this->getFile()." line ".$this->getLine();
-        error_log($message."\n\n", 3, $file);
+        @error_log($message."\n\n", 3, $file);
     }
 }
 
@@ -1135,11 +1135,11 @@ class CFN_CTCTRequest{
             curl_close($curl);
 
             if(!in_array($return['info']['http_code'], array('201', '200', '204'))){
-                throw new Exception('Constant Contact HTTP Request Exception: '.$return['xml']);
+                throw new CFN_CTCTException('Constant Contact HTTP Request Exception: '.$return['xml']);
             } else {
                 $return = $return;
             }
-        } catch(Exception $e) {
+        } catch(CFN_CTCTException $e) {
             $e->generateError();
         }
         return $return;

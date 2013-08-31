@@ -3,7 +3,7 @@
 Plugin Name: Fast Secure Contact Form Newsletter Add-on
 Plugin URI: http://www.katzwebservices.com
 Description: Integrate Constant Contact with Fast Secure Contact Form
-Version: 2.0.5
+Version: 2.0.6
 Author: Katz Web Services, Inc.
 Author URI: http://www.katzwebservices.com
 
@@ -33,7 +33,7 @@ class FSCF_CTCT {
      * Add actions to load the plugin
      */
     public function __construct() {
-        $this->version = '2.0.5';
+        $this->version = '2.0.6';
         self::$path = plugin_dir_path( __FILE__ );
 
         /**
@@ -319,9 +319,9 @@ class FSCF_CTCT {
             update_option( 'sicf_ctct_form_'.$form_id, $_POST['sicf_ctct'] );
 
         } else if(isset($_POST['sicf_ctct_account_form'])) {
-
             check_admin_referer('account_action', 'sicf_ctct_account_form');
             delete_option('sicf_ctct_valid');
+            delete_option('sicf_ctct');
             add_option( 'sicf_ctct', array('username' => $_POST['sicf_ctct']['username'], 'password' => $_POST['sicf_ctct']['password']), '', 'no');
         }
     }
