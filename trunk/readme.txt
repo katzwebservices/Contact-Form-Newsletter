@@ -51,7 +51,7 @@ Note: The plugin requires PHP 5.2 or higher. Constant Contact offers a free 60 d
 
 == Changelog ==
 
-= 2.0.4, 2.0.5 & 2.0.6 =
+= 2.0.4, 2.0.5 & 2.0.6, 2.0.7 =
 * Fixed error caused by renaming libraries, introduced in 2.0.3. Sorry about that.
 
 = 2.0.3 =
@@ -77,7 +77,7 @@ Note: The plugin requires PHP 5.2 or higher. Constant Contact offers a free 60 d
 
 == Upgrade Notice ==
 
-= 2.0.4, 2.0.5 & 2.0.6 =
+= 2.0.4, 2.0.5 & 2.0.6, 2.0.7 =
 * Fixed error caused by renaming libraries, introduced in 2.0.3. Sorry about that.
 
 = 2.0.3 =

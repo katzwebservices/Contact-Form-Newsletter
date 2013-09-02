@@ -68,7 +68,7 @@ class CFN_ListsCollection extends CFN_Collection{
                 $CFN_ListsCollection['lists'][] = new CFN_ContactList(CFN_ContactList::createStruct($entry));
             }
         }
-        $CFN_ListsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
+        $CFN_ListsCollection['nextLink'] = CFN_Utility::findNextLink($parsedResponse);
         return $CFN_ListsCollection;
     }
 
@@ -97,7 +97,7 @@ class CFN_ListsCollection extends CFN_Collection{
         foreach($parsedResponse->entry as $entry){
             $membersCollection['members'][] = new CFN_Contact(CFN_ContactList::createMemberStruct($entry));
         }
-        $membersCollection['nextLink'] = Utility::findNextLink($parsedResponse);
+        $membersCollection['nextLink'] = CFN_Utility::findNextLink($parsedResponse);
         return $membersCollection;
     }
 
@@ -158,7 +158,7 @@ class CFN_ContactsCollection extends CFN_Collection{
         foreach ( $parsedResponse->entry as $entry){
             $CFN_ContactsCollection['contacts'][] = new CFN_Contact(CFN_Contact::createStruct($entry));
         }
-        $CFN_ContactsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
+        $CFN_ContactsCollection['nextLink'] = CFN_Utility::findNextLink($parsedResponse);
         return $CFN_ContactsCollection;
     }
 
@@ -188,7 +188,7 @@ class CFN_ContactsCollection extends CFN_Collection{
                 $contactEvents['events'][] = new CampaignEvent(CampaignEvent::createStruct($entry, $eventType));
             }
         }
-        $contactEvents['nextLink'] = Utility::findNextLink($parsedResponse);
+        $contactEvents['nextLink'] = CFN_Utility::findNextLink($parsedResponse);
         return $contactEvents;
     }
 
@@ -287,7 +287,7 @@ class CFN_CampaignsCollection extends CFN_Collection{
         foreach ($parsedResponse->entry as $entry){
             $CFN_CampaignsCollection['campaigns'][] = new Campaign(Campaign::createOverviewStruct($entry));
         }
-        $CFN_CampaignsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
+        $CFN_CampaignsCollection['nextLink'] = CFN_Utility::findNextLink($parsedResponse);
         return $CFN_CampaignsCollection;
     }
 
@@ -329,7 +329,7 @@ class CFN_CampaignsCollection extends CFN_Collection{
             foreach ($parsedResponse->entry as $entry){
                 $CFN_CampaignsCollection['campaigns'][] = new Campaign(Campaign::createOverviewStruct($entry));
             }
-            $CFN_CampaignsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
+            $CFN_CampaignsCollection['nextLink'] = CFN_Utility::findNextLink($parsedResponse);
         } catch (CTCTException $e) {
             $e->generateError();
         }
@@ -387,7 +387,7 @@ class CFN_CampaignsCollection extends CFN_Collection{
         foreach($parsedResponse->entry as $entry){
             $events['events'][] = new CampaignEvent(CampaignEvent::createStruct($entry, $eventType));
         }
-	$events['nextLink'] = Utility::findNextLink($parsedResponse);
+	$events['nextLink'] = CFN_Utility::findNextLink($parsedResponse);
         return $events;
     }
 
@@ -452,7 +452,7 @@ class CFN_LibraryCollection extends CFN_Collection{
         foreach ($parsedResponse->entry as $folder){
             $foldersCollection['folders'][] = new Folder(Folder::createStruct($folder));
         }
-        $foldersCollection['nextLink'] = Utility::findNextLink($parsedResponse);
+        $foldersCollection['nextLink'] = CFN_Utility::findNextLink($parsedResponse);
         return $foldersCollection;
     }
 
@@ -592,7 +592,7 @@ class CFN_SettingsCollection extends CFN_Collection{
         foreach($parsedResponse->entry as $entry){
             $addressCollection['addresses'][] = new VerifiedAddress(VerifiedAddress::createStruct($entry));
         }
-        $addressCollection['nextLink'] = Utility::findNextLink($parsedResponse);
+        $addressCollection['nextLink'] = CFN_Utility::findNextLink($parsedResponse);
         return $addressCollection;
     }
 }
@@ -622,7 +622,7 @@ class CFN_EventsCollection extends CFN_Collection{
         foreach($parsedResponse->entry as $entry){
             $CFN_EventsCollection['events'][] = new Event(Event::createStruct($entry));
         }
-        $CFN_EventsCollection['nextLink'] = Utility::findNextLink($parsedResponse);
+        $CFN_EventsCollection['nextLink'] = CFN_Utility::findNextLink($parsedResponse);
         return $CFN_EventsCollection;
     }
 
@@ -649,7 +649,7 @@ class CFN_EventsCollection extends CFN_Collection{
         foreach($parsedResponse->entry as $reg){
             $registrantsArr['registrants'][] = new Registrant(Registrant::createStruct($reg));
         }
-        $registrantsArr['nextLink'] = Utility::findNextLink($parsedResponse);
+        $registrantsArr['nextLink'] = CFN_Utility::findNextLink($parsedResponse);
         return $registrantsArr;
     }
 
