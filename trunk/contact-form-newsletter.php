@@ -3,7 +3,7 @@
 Plugin Name: Fast Secure Contact Form Newsletter Add-on
 Plugin URI: http://www.katzwebservices.com
 Description: Integrate Constant Contact with Fast Secure Contact Form
-Version: 2.0.7
+Version: 2.1.1
 Author: Katz Web Services, Inc.
 Author URI: http://www.katzwebservices.com
 
@@ -33,8 +33,12 @@ class FSCF_CTCT {
      * Add actions to load the plugin
      */
     public function __construct() {
-        $this->version = '2.0.7';
+        $this->version = '2.1.1';
         self::$path = plugin_dir_path( __FILE__ );
+
+        // PressTrends WordPress Action
+        add_action('admin_init', array(&$this, 'presstrends'));
+        add_action('fscfctct_event', array(&$this, 'track_event'), 1, 1 );
 
         /**
          * If the server doesn't support PHP 5.3, sorry, but you're outta luck.
@@ -42,16 +46,20 @@ class FSCF_CTCT {
         if(version_compare(phpversion(), '5.1.3') <= 0) {
             add_action('fsctf_newsletter_tab', array(&$this, 'compatibilityNotice'));
             add_action('admin_notices', array(&$this, 'compatibilityNotice'), 30);
+            do_action( 'fscfctct_event', 'PHP Incompatible: Version '.phpversion());
             return;
         }
 
         require_once(self::$path."ctct_php_library/ConstantContact.php");
+        require_once(self::$path."nameparse.php");
 
         add_action('fsctf_newsletter_tab', array(&$this, 'adminDisplayForm'));
         add_action('admin_init', array(&$this, 'adminProcessSettings'));
         add_action('fsctf_mail_sent', array(&$this, 'pushContact'));
 
         add_action('plugins_loaded', array(&$this, 'addActionsToV3'));
+
+        add_action('fs_contact_fields_extra_modifiers', array(&$this, 'output_field_mapping'), 10, 3);
     }
 
     /**
@@ -108,6 +116,8 @@ class FSCF_CTCT {
      */
     function adminDisplayForm() {
 
+        wp_enqueue_script( 'jquery-ui-tooltip' );
+
         // Start outputting page.
         flush();
 
@@ -121,7 +131,44 @@ class FSCF_CTCT {
                 });
             </script>
     <?php } ?>
+
+    <script>
+        jQuery(document).ready(function($) {
+            $('.cc_help').tooltip({
+                content: function () {
+                    return $(this).prop('title');
+                }
+            });
+        });
+    </script>
+
     <style>
+        .cc_help {
+            background: #aaa;
+            color: white;
+            padding: 0 5px;
+            border-radius: 100px;
+            display: inline-block;
+            cursor: help;
+            margin: 12px 5px 0 5px;
+        }
+        .cc_logo_label {
+            margin:10px 0;
+            padding: 5px 10px 10px;
+            border: 1px solid #ddd;
+            background: #e9e9e9;
+            border-radius: 3px;
+            float: left;
+        }
+        .cc_logo_label span.favicon {
+            background: url(<?php echo plugins_url('favicon.png', __FILE__); ?>) left top no-repeat;
+            padding: 0 10px 0 21px;
+        }
+        #optionsform #ui-id-9 {
+            background: url(<?php echo plugins_url('favicon.png', __FILE__); ?>) 10px center no-repeat;
+            padding-left: 31px;
+        }
+
         .block { display: block; }
         #tabs-9 > h3 { display: none; }
         #tabs-9 .fscf_settings_group {
@@ -262,13 +309,18 @@ class FSCF_CTCT {
         $option = get_option('sicf_ctct_valid');
         if(!empty($option)) { return true; }
         try{
-
             $ContactsCollection = new CFN_ContactsCollection($api->CTCTRequest);
             ob_start();
             $response = $api->CTCTRequest->makeRequest($ContactsCollection->uri.'?email=asdasdsasdasdasdasdsadsadasdas@asdmgmsdfdaf.com', 'GET');
             ob_clean();
             $valid = in_array($response['info']['http_code'], array('201', '200', '204')) ? true : false;
+            if($valid) {
+                do_action( 'fscfctct_event', 'Valid Configuration');
+            } else {
+                do_action( 'fscfctct_event', 'Invalid Configuration');
+            }
         } catch (Exception $e) {
+            do_action( 'fscfctct_event', 'Exception: '.$e->getMessage());
             $valid = false;
         }
 
@@ -416,11 +468,11 @@ class FSCF_CTCT {
         $saved_lists = self::getSetting('lists', $form_id);
 
         if (empty($lists)){
-            echo __("Could not load Constant Contact contact lists. <br/>Error: ", "gravity-forms-constant-contact") . $api->errorMessage;
+            echo __("Could not load Constant Contact contact lists. <br/>Error: ", 'si-contact-form-newsletter') . $api->errorMessage;
         }
         else{
             ?>
-        <h2><small><?php _e("When this form is submitted, the entry will be added to the following Constant Contact lists:", "gravity-forms-constant-contact"); ?></small></h2>
+        <h2><small><?php _e("When this form is submitted, the entry will be added to the following Constant Contact lists:", 'si-contact-form-newsletter'); ?></small></h2>
             <ul class="ul-columns">
                 <?php
                 $output = '';
@@ -437,6 +489,8 @@ class FSCF_CTCT {
                 echo $output;
                 ?>
                 </ul>
+        <div class="clear"></div>
+        <a href="<?php echo add_query_arg(array('refresh' => 1)); ?>" class="alignright button button-secondary button-small" title="<?php _e('If the lists shown are out of date, click this button to refresh the lists.', 'si-contact-form-newsletter'); ?>"><?php _e('Refresh Lists', 'si-contact-form-newsletter'); ?></a>
           <input type="hidden" value="<?php echo $form_id; ?>" name="form_id" />
         <?php
         }
@@ -455,46 +509,210 @@ class FSCF_CTCT {
     }
 
     /**
+     * Add a dropdown list for v4 field settings where users can map the field to the CTCT values
+     * @param  string $field_opt_name The name attribute of the field (`fs_contact_form1[fields][0]`, for example)
+     * @param  array $field          The field settings array.
+     * @param  integer $key            The key of the field. As seen in `$field_opt_name`
+     */
+    function output_field_mapping($field_opt_name, $field, $key) {
+        // Create an ID attribute
+        $field_id = str_replace(array('[', ']'), '_', $field_opt_name).'_ctct';
+
+        $output = '<label class="cc_logo_label" for="'.$field_id.'"><span class="favicon">Constant Contact:</span>';
+        $output .= '<select name="'.$field_opt_name.'[ctct]" id="'.$field_id.'">';
+        $output .= '<option value="">';
+        $output .= __('Choose Constant Contact Field', 'si-contact-form-newsletter');
+        $output .= '</option>';
+
+        // Get the fields
+        $fields = $this->get_field_list();
+
+        // If these are the pre-defined fields, we force values.
+        if( in_array($field['slug'], array('name', 'full_name', 'email')) && !empty($field['standard'])) {
+
+        }
+
+        // Set CTCT field value
+        $field_value = @$field['ctct'];
+
+        // Set default values if not set
+        if(!isset($field['ctct'])) {
+            switch($field['slug']) {
+                case 'name': // backward compat with 3.x
+                case 'full_name':
+                    $field_value = 'fullName';
+                    break;
+                case 'email':
+                    $field_value = 'emailAddress';
+                    break;
+            }
+        }
+
+        // For each CTCT field, create an <option>
+        foreach ($fields as $key => $value) {
+            $output .= '<option value="'.$key.'"'. selected( $field_value, $key, false ) .'>'.esc_html( $value ).'</option>';
+        }
+        $output .= '</select>';
+
+        $output .= sprintf('<span class="cc_help" title="%s">?</span>', __('<p><strong class=\'block\'>Map the Field to Constant Contact</strong> Use this drop-down menu to match the current field to a Constant Contact field.</p>', 'si-contact-form-newsletter'));
+
+        $output .= '</label>';
+
+        echo $output;
+    }
+
+    /**
+     * Get an array of CTCT fields and descriptions (keys are field names, values are descriptions)
+     * @return array
+     */
+    function get_field_list() {
+        $fields = array(
+            'emailAddress' => __('Email Address (one per form)', 'si-contact-form-newsletter'),
+            'fullName' => __('Full Name', 'si-contact-form-newsletter'),
+            'firstName' => __('First Name', 'si-contact-form-newsletter'),
+            'middleName' => __('Middle Name', 'si-contact-form-newsletter'),
+            'lastName' => __('Last Name', 'si-contact-form-newsletter'),
+            'jobTitle' => __('Job Title', 'si-contact-form-newsletter'),
+            'companyName' => __('Company Name', 'si-contact-form-newsletter'),
+            'homePhone' => __('Home Phone', 'si-contact-form-newsletter'),
+            'workPhone' => __('Work Phone', 'si-contact-form-newsletter'),
+            'addr1' => __('Address 1', 'si-contact-form-newsletter'),
+            'addr2' => __('Address 2', 'si-contact-form-newsletter'),
+            'addr3' => __('Address 3', 'si-contact-form-newsletter'),
+            'city' => __('City', 'si-contact-form-newsletter'),
+            'stateCode' => __('State Code (2 letters)', 'si-contact-form-newsletter'),
+            'stateName' => __('State Name', 'si-contact-form-newsletter'),
+            'countryCode' => __('Country Code (2 letters)', 'si-contact-form-newsletter'),
+            'countryName' => __('Country Name', 'si-contact-form-newsletter'),
+            'postalCode' => __('Postal Code', 'si-contact-form-newsletter'),
+            'subPostalCode' => __('Sub Postal Code', 'si-contact-form-newsletter'),
+            'notes' => __('Customer Notes', 'si-contact-form-newsletter'),
+            'customField1' => __('Custom Field 1', 'si-contact-form-newsletter'),
+            'customField2' => __('Custom Field 2', 'si-contact-form-newsletter'),
+            'customField3' => __('Custom Field 3', 'si-contact-form-newsletter'),
+            'customField4' => __('Custom Field 4', 'si-contact-form-newsletter'),
+            'customField5' => __('Custom Field 5', 'si-contact-form-newsletter'),
+            'customField6' => __('Custom Field 6', 'si-contact-form-newsletter'),
+            'customField7' => __('Custom Field 7', 'si-contact-form-newsletter'),
+            'customField8' => __('Custom Field 8', 'si-contact-form-newsletter'),
+            'customField9' => __('Custom Field 9', 'si-contact-form-newsletter'),
+            'customField10' => __('Custom Field 10', 'si-contact-form-newsletter'),
+            'customField11' => __('Custom Field 11', 'si-contact-form-newsletter'),
+            'customField12' => __('Custom Field 12', 'si-contact-form-newsletter'),
+            'customField13' => __('Custom Field 13', 'si-contact-form-newsletter'),
+            'customField14' => __('Custom Field 14', 'si-contact-form-newsletter'),
+            'customField15' => __('Custom Field 15', 'si-contact-form-newsletter'),
+        );
+
+        return $fields;
+    }
+
+    /**
      * Take the posted data and turn it into CTCT Contact-formatted array
      * @see  Contact::__construct()
      * @param  array  $data Form Data
      * @param  array  $post $_POST data
      * @return array       Contact-formatted data
      */
-    function generateContactArray(&$data = array(), $post = array()) {
+    function generateContactArray(&$data = array(), $post = array(), $form = array()) {
 
         $fields = array();
 
-        // Process the name and figure out the names for the single input field.
-        if(isset($data['from_name'])) {
+        // Set the email address using posted data
+        $fields['emailAddress'] = self::getIfSet($post, 'email');
+        $fields['emailAddress'] = $fields['emailAddress'] ? $fields['emailAddress'] : self::getIfSet($data, 'from_email');
 
-            // We check what's passed by the $_POST so we can be sure what the exact names are
-            $fields['firstName'] = isset($post['f_name']) ? FSCF_Util::clean_input( $post['f_name'] ) : '';
-            $fields['middleName'] = isset($post['m_name']) ? FSCF_Util::clean_input( $post['m_name'] ) : (isset($post['mi_name']) ? FSCF_Util::clean_input( $post['mi_name'] ) : '');
-            $fields['lastName'] = isset($post['l_name']) ? FSCF_Util::clean_input( $post['l_name'] ) : '';
+        // 1. Parse the from_name parameter for initial data.
+        $fields = $this->parseName(@$data['from_name'], $fields);
 
-            // Then we fill in the pieces for what's missing
-            $name = explode(' ', $data['from_name']);
-            $fields['firstName'] = !empty($fields['firstName']) ? $fields['firstName'] : $name[0];
-            if(sizeof($name) === 3) {
-                $fields['middleName'] = !empty($fields['middleName']) ? $fields['middleName'] : $name[1];
-                $fields['lastName'] = !empty($fields['lastName']) ? $fields['lastName'] : $name[2];
-            } elseif(sizeof($name) === 2) {
-                $fields['lastName'] = !empty($fields['lastName']) ? $fields['lastName'] : $name[1];
+        // 2. Get name data from the posted data itself
+        // The name field is tough. It is not like the other fields.
+        // They keys also change from v3 to v4.
+        $fields['firstName'] = self::getIfSet($data, 'f_name', 'first_name');
+        $fields['middleName'] = self::getIfSet($data, 'm_name', 'middle_name');
+        $fields['lastName'] = self::getIfSet($data, 'l_name', 'last_name');
+
+        // If CTCT settings are used, set that data.
+        if(!self::isV3(true)) {
+            // We cycle through the form fields checking to
+            // see if there are ctct settings defined.
+            foreach ($form['fields'] as $field) {
+                // If the field has CTCT fields mapped, and the data exists
+                if(!empty($field['ctct']) && isset($data[$field['slug']]) ) {
+                    // We overwrite the existing data, since that should be used instead.
+                    $fields[$field['ctct']] = $data[$field['slug']];
+                }
             }
         }
 
-        $fields['emailAddress'] = '';
-
-        if(isset($data['from_email'])) {
-            $fields['emailAddress'] = $data['from_email'];
-        } elseif(isset($post['email'])) {
-            $fields['emailAddress'] = FSCF_Util::clean_input($post['email']);
+        // 3. If the name wasn't already set and the name field exists,
+        // we process the name field and figure out the names for the single input name field.
+        // We overwrite the data, since the fullName parameter being set means someone wanted
+        // it that way (instead of default posted data generation, like used above.)
+        if(!empty($fields['fullName'])) {
+            $fields = $this->parseName($fields['fullName'], $fields, true);
         }
 
+        // If the email address isn't an email at all, then set it as false.
+        // This shouldn't be necessary because of FSCF email verification,
+        // but we check just in case it's using a text field or something that isn't validated.
         $fields['emailAddress'] = is_email( $fields['emailAddress'] ) ? $fields['emailAddress'] : false;
 
         return $fields;
+    }
+
+    /**
+     * Convert a string to name pieces array
+     * @uses ctf_form_parse_name()
+     * @param  string  $fullName  Name to break into an array
+     * @param  array  $fields    Existing field data
+     * @param  boolean $overwrite Overwrite pre-existing data with name parse?
+     * @return array             Modified fields
+     */
+    function parseName($fullName, $fields, $overwrite = false) {
+        $name = ctf_form_parse_name($fullName);
+
+        if(isset($name['suffix'])) {
+            $name['lastName'] = $name['lastName'].' '.$name['suffix'];
+        }
+        unset($name['suffix'], $name['title']);
+
+        foreach ($name as $key => $value) {
+            if($overwrite) {
+                $fields[$key] = $value;
+            } else {
+                $fields[$key] = !empty($fields[$key]) ? $fields[$key] : $value;
+            }
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Check an array for a value at key `$key`. If not set, check array for value at `$backupKey`. If not set, return false. If set, return value.
+     * @param  array  $array     Array to check
+     * @param  string  $key       Array key to check
+     * @param  string $backupKey Also check this key as a backup option
+     * @param  boolean $clean     Sanitize the output
+     * @return mixed|boolean     If value exists, return value. If not, return false.
+     */
+    function getIfSet($array, $key, $backupKey = '', $clean = true) {
+        if(isset($array[$key])) {
+            if($clean) {
+                if(class_exists('FSCF_Util')) {
+                    return FSCF_Util::clean_input($array[$key]);
+                } else {
+                    return esc_attr($array[$key]);
+                }
+            }
+            return $array[$key];
+        } else {
+            // Do recursive check for the backup key
+            if(!empty($backupKey)) {
+                return self::getIfSet($array, $backupKey, false, $clean);
+            }
+            return false;
+        }
     }
 
     /**
@@ -503,14 +721,23 @@ class FSCF_CTCT {
      */
     function pushContact(&$fsctf_posted_data) {
 
-        $fields = self::generateContactArray($fsctf_posted_data->posted_data, @$_POST);
-
-        // We need a valid email.
-        if(empty($fields['emailAddress'])) {
-            return;
+        // V3 doesn't have this methinks
+        if(class_exists('FSCF_Util')) {
+            $form = FSCF_Util::get_form_options( $fsctf_posted_data->form_number, false );
+        } else {
+            $form = array();
         }
 
-        $form_id = isset($_POST['form_id']) ? floatval($_POST['form_id']) : (isset($_POST['si_contact_form_id']) ? floatval($_POST['si_contact_form_id']) : 1);
+        $fields = self::generateContactArray($fsctf_posted_data->posted_data, @$_POST, $form);
+
+        // We need a valid email.
+        if(empty($fields['emailAddress'])) { return; }
+
+        $form_id = isset($fsctf_posted_data->form_number) ? $fsctf_posted_data->form_number : false;
+        if(!$form_id) {
+            $form_id = isset($_POST['form_id']) ? floatval($_POST['form_id']) : (isset($_POST['si_contact_form_id']) ? floatval($_POST['si_contact_form_id']) : 1);
+        }
+
         $api = self::getAPI();
         $valid = self::validateAPI($api);
         $lists = self::getSetting('lists', $form_id);
@@ -518,7 +745,7 @@ class FSCF_CTCT {
         // No Lists Defined.
         if(!$valid || empty($api) || empty($lists)) { return; }
 
-        $retval = self::addUpdateContact($fields, $lists);
+        return self::addUpdateContact($fields, $lists);
     }
 
     /**
@@ -574,10 +801,10 @@ class FSCF_CTCT {
             // Set the merged lists
             $ExistingContact->lists = $lists;
 
-        #    self::r($ExistingContact, true, 'Existing Contact'); // DEBUG
-
             // Update the contact
             $updated = $api->updateContact(apply_filters( 'sicf_ctct_existing_contact', $ExistingContact, $fields, $lists));
+
+#            self::r($ExistingContact, true, 'Existing Contact'); // DEBUG
 
             // Return on completion
             return $updated;
@@ -592,9 +819,72 @@ class FSCF_CTCT {
         // Create the contact
         $AddedContact = $api->addContact(apply_filters( 'sicf_ctct_new_contact', $Contact, $fields, $lists));
 
-        # self::r($AddedContact, true, 'Added Contact'); // DEBUG
+#       self::r($AddedContact, true, 'Added Contact'); // DEBUG
 
         return $AddedContact;
+    }
+
+    function track_event($event_name) {
+        // PressTrends Account API Key & Theme/Plugin Unique Auth Code
+        $api_key        = 'mc9ossbhdx30z6l7x4dnchacxpzhp6e054t4';
+        $auth           = 'fkw7nfo4tk63nr0u6oohfyqxnesb8gc46';
+        $api_base       = 'http://api.presstrends.io/index.php/api/events/track/auth/';
+        $api_string     = $api_base . $auth . '/api/' . $api_key . '/';
+        $site_url       = base64_encode(site_url());
+        $event_string   = $api_string . 'name/' . urlencode($event_name) . '/url/' . $site_url . '/';
+        wp_remote_get( $event_string );
+    }
+
+    function presstrends() {
+        // PressTrends Account API Key
+        $api_key = 'mc9ossbhdx30z6l7x4dnchacxpzhp6e054t4';
+        $auth    = 'fkw7nfo4tk63nr0u6oohfyqxnesb8gc46';
+        // Start of Metrics
+        global $wpdb;
+        $data = get_transient( 'presstrends_cache_data' );
+        if ( !$data || $data == '' ) {
+            $api_base = 'http://api.presstrends.io/index.php/api/pluginsites/update/auth/';
+            $url      = $api_base . $auth . '/api/' . $api_key . '/';
+            $count_posts    = wp_count_posts();
+            $count_pages    = wp_count_posts( 'page' );
+            $comments_count = wp_count_comments();
+            if ( function_exists( 'wp_get_theme' ) ) {
+                $theme_data = wp_get_theme();
+                $theme_name = urlencode( $theme_data->Name );
+            } else {
+                $theme_data = get_theme_data( get_stylesheet_directory() . '/style.css' );
+                $theme_name = $theme_data['Name'];
+            }
+            $plugin_name = '&';
+            foreach ( get_plugins() as $plugin_info ) {
+                if(strlen($plugin_name.$plugin_info['Name'] . '&') > 3000) { continue; } // Too long!
+                $plugin_name .= $plugin_info['Name'] . '&';
+            }
+            // CHANGE __FILE__ PATH IF LOCATED OUTSIDE MAIN PLUGIN FILE
+            $plugin_data         = get_plugin_data( __FILE__ );
+            $posts_with_comments = $wpdb->get_var( "SELECT COUNT(*) FROM $wpdb->posts WHERE post_type='post' AND comment_count > 0" );
+            $data                = array(
+                'url'             => stripslashes( str_replace( array( 'http://', '/', ':' ), '', site_url() ) ),
+                'posts'           => $count_posts->publish,
+                'pages'           => $count_pages->publish,
+                'comments'        => $comments_count->total_comments,
+                'approved'        => $comments_count->approved,
+                'spam'            => $comments_count->spam,
+                'pingbacks'       => $wpdb->get_var( "SELECT COUNT(comment_ID) FROM $wpdb->comments WHERE comment_type = 'pingback'" ),
+                'post_conversion' => ( $count_posts->publish > 0 && $posts_with_comments > 0 ) ? number_format( ( $posts_with_comments / $count_posts->publish ) * 100, 0, '.', '' ) : 0,
+                'theme_version'   => $plugin_data['Version'],
+                'theme_name'      => $theme_name,
+                'site_name'       => str_replace( ' ', '', get_bloginfo( 'name' ) ),
+                'plugins'         => count( get_option( 'active_plugins' ) ),
+                'plugin'          => urlencode( $plugin_name ),
+                'wpversion'       => get_bloginfo( 'version' ),
+            );
+            foreach ( $data as $k => $v ) {
+                $url .= $k . '/' . $v . '/';
+            }
+            wp_remote_get( $url );
+            set_transient( 'presstrends_cache_data', $data, 60 * 60 * 24 );
+        }
     }
 }
 
