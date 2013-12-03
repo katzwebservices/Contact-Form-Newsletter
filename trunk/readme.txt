@@ -1,7 +1,7 @@
 === Fast Secure Contact Form Newsletter ===
 Tags: Fast Secure Contact Form, contact form, contact forms, newsletter, newsletter, spam, captcha, Akismet, email, form, mail, Constant Contact, mailing list, email newsletter
 Requires at least: 2.8
-Tested up to: 3.6
+Tested up to: 3.7.1
 Stable tag: trunk
 Contributors: katzwebdesign, katzwebservices
 License: GPLv2 or later
@@ -49,9 +49,24 @@ Note: The plugin requires PHP 5.2 or higher. Constant Contact offers a free 60 d
 
 * This plugin is released under a GPL license.
 
+= This plugin uses PressTrends =
+
+By installing this plugin, you agree to allow gathering anonymous usage stats through PressTrends. The data gathered is the active Theme name, WordPress version, plugins installed, and other metrics. This allows the developer of this plugin to know what compatibility issues to test for.
+
 == Changelog ==
 
-= 2.0.4 =
+= 2.1.1 (2013-12-02) =
+* Added a "Refresh Lists" button to fetch new lists from Constant Contact
+
+= 2.1 (2013-09-13) =
+* Added awesome drop-down merge fields menus to Version 4 - now you can specify what fields go where in Constant Contact! Very powerful.
+* Improved name parsing for single-field name fields
+* Cleaned up some code
+
+= 2.0.8 =
+* Added PressTrends to help improve compatibility support
+
+= 2.0.4, 2.0.5 & 2.0.6, 2.0.7 =
 * Fixed error caused by renaming libraries, introduced in 2.0.3. Sorry about that.
 
 = 2.0.3 =
@@ -77,7 +92,18 @@ Note: The plugin requires PHP 5.2 or higher. Constant Contact offers a free 60 d
 
 == Upgrade Notice ==
 
-= 2.0.4 =
+= 2.1.1 (2013-12-02) =
+* Added a "Refresh Lists" button to fetch new lists from Constant Contact
+
+= 2.1 (2013-09-13) =
+* Added awesome drop-down merge fields menus to Version 4 - now you can specify what fields go where in Constant Contact! Very powerful.
+* Improved name parsing for single-field name fields
+* Cleaned up some code
+
+= 2.0.8 =
+* Added PressTrends to help improve compatibility support
+
+= 2.0.4, 2.0.5 & 2.0.6, 2.0.7 =
 * Fixed error caused by renaming libraries, introduced in 2.0.3. Sorry about that.
 
 = 2.0.3 =
