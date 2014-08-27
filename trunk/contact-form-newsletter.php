@@ -23,6 +23,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+$path = plugin_dir_path( __FILE__ );
+require_once($path."ctct_php_library/ConstantContact.php");
+require_once($path."nameparse.php");
+        
 class FSCF_CTCT {
 
     private static $apikey = 'dc584880-333d-4c13-99c3-ac097d633de1'; // Required API Key. Do not change.
@@ -50,8 +54,8 @@ class FSCF_CTCT {
             return;
         }
 
-        require_once(self::$path."ctct_php_library/ConstantContact.php");
-        require_once(self::$path."nameparse.php");
+//        require_once(self::$path."ctct_php_library/ConstantContact.php");
+//        require_once(self::$path."nameparse.php");
 
         add_action('fsctf_newsletter_tab', array(&$this, 'adminDisplayForm'));
         add_action('admin_init', array(&$this, 'adminProcessSettings'));
