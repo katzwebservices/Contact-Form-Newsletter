@@ -3,7 +3,7 @@
 Plugin Name: Fast Secure Contact Form Newsletter Add-on
 Plugin URI: http://www.katzwebservices.com
 Description: Integrate Constant Contact with Fast Secure Contact Form
-Version: 2.1.1
+Version: 2.2
 Author: Katz Web Services, Inc.
 Author URI: http://www.katzwebservices.com
 
@@ -23,10 +23,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+$path = plugin_dir_path( __FILE__ );
+require_once($path."ctct_php_library/ConstantContact.php");
+require_once($path."nameparse.php");
+        
 class FSCF_CTCT {
 
     private static $apikey = 'dc584880-333d-4c13-99c3-ac097d633de1'; // Required API Key. Do not change.
     private static $path;
+    private static $api; 
     var $version;
 
     /**
@@ -49,9 +54,6 @@ class FSCF_CTCT {
             do_action( 'fscfctct_event', 'PHP Incompatible: Version '.phpversion());
             return;
         }
-
-        require_once(self::$path."ctct_php_library/ConstantContact.php");
-        require_once(self::$path."nameparse.php");
 
         add_action('fsctf_newsletter_tab', array(&$this, 'adminDisplayForm'));
         add_action('admin_init', array(&$this, 'adminProcessSettings'));
@@ -237,7 +239,8 @@ class FSCF_CTCT {
         </form>
 
     <?php flush(); if($valid) { ?>
-
+        
+       <fieldset class="fscf_settings_group">
         <h2 style="margin-top:20px;"><?php _e(sprintf('Constant Contact Lists (for Form %s)', self::getFormNumber())); ?></h2>
         <div class="clear"></div>
         <form id="ctf_form_lists" action="<?php echo add_query_arg(array('fscf_tab' => 9)); ?>#vCitaSectionAnchor" method="post">
@@ -248,6 +251,7 @@ class FSCF_CTCT {
             </p>
             </fieldset>
         </form>
+       </fieldset>
     <?php
     }
     ?>
@@ -298,7 +302,8 @@ class FSCF_CTCT {
      * @return FSCFConstantContact
      */
     function getAPI() {
-        return new FSCFConstantContact('basic', self::$apikey, self::getSetting('username'), self::getSetting('password'));
+        self::$api = new FSCFConstantContact('basic', self::$apikey, self::getSetting('username'), self::getSetting('password'));
+        return self::$api;
     }
 
     /**
@@ -354,7 +359,15 @@ class FSCF_CTCT {
         if(is_null($form_id)) {
             $form_id = self::getFormNumber();
         }
-        return get_option("si_contact_form$form_id");
+        return get_option("fs_contact_form$form_id");
+    }
+    
+    /**
+     * Update settings for a FSCF form.
+     * Used to change the options for a select field used to choose newsletters.
+     */
+    function setFormSetting($form_id,$settings) {
+        update_option("fs_contact_form$form_id",$settings);
     }
 
     /**
@@ -368,6 +381,38 @@ class FSCF_CTCT {
 
             $form_id = self::getFormNumber();
 
+            if ( isset ($_POST['sicf_ctct']['select_field'])) {
+//            if ( isset ($_POST['sicf_ctct']['choose_list'])) {
+                // Get all contact lists
+                if ( empty(self::$api) )
+                    $api = self::getAPI();
+                $CTCTLists = self::getAllLists(self::$api);
+            
+                // Change the array key for lists to the list name
+                // (So we can later use the list name as a key)
+                if ( isset ($_POST['sicf_ctct']['lists'])) {
+                    $myLists = $_POST['sicf_ctct']['lists'];
+                    unset($_POST['sicf_ctct']['lists']);
+                    $selectList = '';
+                    $cnt = 0;
+                    foreach ( $myLists as $list ) {
+                        $listId = substr($list, strrpos($list,'/')+1 );
+                        if ( $cnt++ > 0 ) $selectList .= "\n";
+                        $listName = $CTCTLists[$listId]->name;
+                        $selectList .= $listName;
+                        $_POST['sicf_ctct']['lists'][$listName] = $list;
+                    }
+                }
+            
+                // Set the options for the chosen select field to the list of newsletters
+                $fld_id = $_POST['sicf_ctct']['select_field'];
+                if ( $fld_id !== "none" ) {
+                    $form = self::formSetting($form_id);
+                    $form['fields'][$fld_id]['options'] = $selectList;
+                    self::setFormSetting($form_id,$form);
+                }
+            }
+        
             update_option( 'sicf_ctct_form_'.$form_id, $_POST['sicf_ctct'] );
 
         } else if(isset($_POST['sicf_ctct_account_form'])) {
@@ -460,23 +505,23 @@ class FSCF_CTCT {
     function adminDisplayFormSettings($api) {
         $form_id = self::getFormNumber();
         $form = self::formSetting($form_id);
-
+        
         //getting all contact lists
         $lists = self::getAllLists($api);
 
         // Get the saved lists for this form
         $saved_lists = self::getSetting('lists', $form_id);
+        $select_field = self::getSetting('select_field', $form_id); // form field used to select newsletter
 
         if (empty($lists)){
             echo __("Could not load Constant Contact contact lists. <br/>Error: ", 'si-contact-form-newsletter') . $api->errorMessage;
         }
         else{
             ?>
-        <h2><small><?php _e("When this form is submitted, the entry will be added to the following Constant Contact lists:", 'si-contact-form-newsletter'); ?></small></h2>
+        <p><?php _e("Choose the Constant Contact lists to which the user is able to subscribe:", 'si-contact-form-newsletter'); ?></p>
             <ul class="ul-columns">
                 <?php
                 $output = '';
-
                 foreach($lists as $listid => $list) {
                     $output .= '
                     <li>
@@ -492,9 +537,43 @@ class FSCF_CTCT {
         <div class="clear"></div>
         <a href="<?php echo add_query_arg(array('refresh' => 1)); ?>" class="alignright button button-secondary button-small" title="<?php _e('If the lists shown are out of date, click this button to refresh the lists.', 'si-contact-form-newsletter'); ?>"><?php _e('Refresh Lists', 'si-contact-form-newsletter'); ?></a>
           <input type="hidden" value="<?php echo $form_id; ?>" name="form_id" />
-        <?php
+        
+          <div class="clear"></div>
+          <?php 
+        // Display list of form fields to choose from for list selection
+        echo '<p>' . __("Choose a form field to use to allow users to select list(s). If you choose 'none,' users will be subscribed to all the lists "
+                . "checked above. ",'si-contact-form-newsletter') . '</p>';
+        $output = '<label for="sicf_ctct_select_field">'.__('Field to use for selecting list(s)','si-contact-form-newsletter') . "</label>\n"
+                . '<select id="sicf_ctct_select_field" name="sicf_ctct[select_field]">' . "\n"
+                . '<option value="none">' . __('none','si-contact-form-newsletter') . "</option> \n";
+        $select_fields = array();
+        $fld_cnt = 0;
+        // Find the select, select-multiple and checkbox-multiple field types
+//        $fld_types = array("select")
+        foreach ( $form['fields'] as $key => $field ) {
+            $fld_type = substr($field['type'], 0, 6);
+            if ( ('select' == substr($field['type'], 0, 6) || 'checkbox-multiple' == $field['type'] ) && $key > 4 ) {
+                $select_fields[$key] = $field['label'];
+                $output .= '<option value="' . $key . '"' . ($key == $select_field ? ' selected="selected" ' : '') . '>';
+                $output .= $field['label'] . "</option>\n";
+                $fld_cnt++;
+            }
         }
-
+            echo $output . '</select>';
+            ?>
+            <a style="cursor:pointer;" title="<?php esc_attr_e('Click for Help!', 'si-contact-form'); ?>" onclick="toggleVisibility('fscf-newsletter-fields-tip');"><?php _e('help', 'si-contact-form'); ?></a>
+            <div class="fscf_tip" id="fscf-newsletter-fields-tip" >
+            <?php _e('The field you select will be used to allow the user to choose the newsletter(s) to which to subscribe.  Only select, select-multiple, or checkbox-multiple fields'
+                    . ' can be used for this. If you want the user to be able to choose more than one list, you should use checkbox-multiple or'
+                    . ' select-multiple.  If no field names appear here, you need to add a checkbox or select field on the Fields tab. '
+                    . '<br/><br/>When you press Save Form Lists, the newsletters selected above will be put in the options'
+                    . ' for the field that you select.'
+                    . '<br/><br/>If you choose "none" the user will be added to all the lists checked above.'
+                    . '', 'si-contact-form-newsletter');
+            ?>
+            </div>
+          <div class="clear"></div>
+        <?php }
         wp_nonce_field('list_action', 'sicf_ctct_list_form');
     }
 
@@ -622,16 +701,20 @@ class FSCF_CTCT {
         $fields['emailAddress'] = self::getIfSet($post, 'email');
         $fields['emailAddress'] = $fields['emailAddress'] ? $fields['emailAddress'] : self::getIfSet($data, 'from_email');
 
-        // 1. Parse the from_name parameter for initial data.
-        $fields = $this->parseName(@$data['from_name'], $fields);
-
-        // 2. Get name data from the posted data itself
+        // 1. Get name data from the posted data itself
         // The name field is tough. It is not like the other fields.
         // They keys also change from v3 to v4.
+        // 
         $fields['firstName'] = self::getIfSet($data, 'f_name', 'first_name');
         $fields['middleName'] = self::getIfSet($data, 'm_name', 'middle_name');
         $fields['lastName'] = self::getIfSet($data, 'l_name', 'last_name');
+        
+        // 2. If the name is blank, parse the from_name parameter to get the name.
+        if ( ! $fields['firstName'] && ! $fields['lastName'] ) {
+            $fields = $this->parseName(@$data['from_name'], $fields);
+        }
 
+        
         // If CTCT settings are used, set that data.
         if(!self::isV3(true)) {
             // We cycle through the form fields checking to
@@ -651,7 +734,7 @@ class FSCF_CTCT {
         // it that way (instead of default posted data generation, like used above.)
         if(!empty($fields['fullName'])) {
             $fields = $this->parseName($fields['fullName'], $fields, true);
-        }
+        } 
 
         // If the email address isn't an email at all, then set it as false.
         // This shouldn't be necessary because of FSCF email verification,
@@ -740,10 +823,27 @@ class FSCF_CTCT {
 
         $api = self::getAPI();
         $valid = self::validateAPI($api);
-        $lists = self::getSetting('lists', $form_id);
+        $lists = (array) self::getSetting('lists', $form_id);
 
         // No Lists Defined.
         if(!$valid || empty($api) || empty($lists)) { return; }
+
+        // Allow the user to choose lists
+        $select_field = self::getSetting('select_field', $form_id);
+        if ( 'none' !== $select_field ) {
+            // Subscribe to the selected lists
+            $form = self::formSetting($form_id);
+            $select_field_slug = $form['fields'][$select_field]['slug'];
+            $new_lists = array();
+            foreach ( $lists as $key => $list ) {
+                if ( false !== strpos($fsctf_posted_data->posted_data[$select_field_slug], $key) )
+                        $new_lists[] = $list;
+            }
+            $lists = $new_lists;
+        }
+        if ( empty($lists) ) {
+            return;
+        }
 
         return self::addUpdateContact($fields, $lists);
     }
