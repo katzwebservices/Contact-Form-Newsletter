@@ -29,7 +29,7 @@ if($DatastoreUser){
 
 <?php
     if(isset($_POST['email_address'])){
-        $Contact = new Contact();
+        $Contact = new CFN_Contact();
         $Contact->emailAddress = $_POST['email_address'];
         $Contact->firstName = $_POST['first_name'];
         $Contact->lastName = $_POST['last_name'];

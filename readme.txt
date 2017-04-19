@@ -1,11 +1,11 @@
 === Fast Secure Contact Form Newsletter ===
 Tags: Fast Secure Contact Form, contact form, contact forms, newsletter, newsletter, spam, captcha, Akismet, email, form, mail, Constant Contact, mailing list, email newsletter
 Requires at least: 2.8
-Tested up to: 3.7.1
+Tested up to: 4.0
 Stable tag: trunk
 Contributors: katzwebdesign, katzwebservices
 License: GPLv2 or later
-Donate link:https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=zackkatz%40gmail%2ecom&item_name=Fast%20Secure%20Contact%20Form%207%20Newsletter&no_shipping=0&no_note=1&tax=0&currency_code=USD&lc=US&bn=PP%2dDonationsBF&charset=UTF%2d8
+Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=zackkatz%40gmail%2ecom&item_name=Fast%20Secure%20Contact%20Form%207%20Newsletter&no_shipping=0&no_note=1&tax=0&currency_code=USD&lc=US&bn=PP%2dDonationsBF&charset=UTF%2d8
 
 Easily add your Fast Secure Contact Form submissions to Constant Contact email marketing lists.
 
@@ -13,7 +13,7 @@ Easily add your Fast Secure Contact Form submissions to Constant Contact email m
 
 ### The Fast Secure Contact Form plugin now has newsletter support
 
-The Fast Secure Contact form has almost <em>4 million</em> downloads, and now -- with this add-on plugin -- it has easy integration with Constant Contact, the world's leading email marketing platform!
+The Fast Secure Contact form has <em>5 million</em> downloads, and now -- with this add-on plugin -- it has easy integration with Constant Contact, the world's leading email marketing platform!
 
 ### Setting up newsletter integration is simple:
 
@@ -42,6 +42,8 @@ Note: The plugin requires PHP 5.2 or higher. Constant Contact offers a free 60 d
 == Screenshots ==
 
 1. The configuration screen of the Fast Secure Contact Form when you have this newsletter plugin installed and activated.
+2. Specify how fields are mapped to Constant Contact fields
+3. Choose the lists form submissions are sent to
 
 == Frequently Asked Questions ==
 
@@ -49,11 +51,12 @@ Note: The plugin requires PHP 5.2 or higher. Constant Contact offers a free 60 d
 
 * This plugin is released under a GPL license.
 
-= This plugin uses PressTrends =
-
-By installing this plugin, you agree to allow gathering anonymous usage stats through PressTrends. The data gathered is the active Theme name, WordPress version, plugins installed, and other metrics. This allows the developer of this plugin to know what compatibility issues to test for.
 
 == Changelog ==
+
+= 2.1.2 (2014-08-26) =
+* Fixed: Error on activation caused by loading nameparse.php
+* Removed PressTrends
 
 = 2.1.1 (2013-12-02) =
 * Added a "Refresh Lists" button to fetch new lists from Constant Contact
@@ -91,6 +94,10 @@ By installing this plugin, you agree to allow gathering anonymous usage stats th
 * Blast off!
 
 == Upgrade Notice ==
+
+= 2.1.2 (2014-08-26) =
+* Fixed: Error on activation caused by loading nameparse.php
+* Removed PressTrends
 
 = 2.1.1 (2013-12-02) =
 * Added a "Refresh Lists" button to fetch new lists from Constant Contact
