@@ -3,7 +3,7 @@
 Plugin Name: Fast Secure Contact Form Newsletter Add-on
 Plugin URI: http://www.katzwebservices.com
 Description: Integrate Constant Contact with Fast Secure Contact Form
-Version: 2.1.1
+Version: 2.1.2
 Author: Katz Web Services, Inc.
 Author URI: http://www.katzwebservices.com
 
@@ -33,12 +33,8 @@ class FSCF_CTCT {
      * Add actions to load the plugin
      */
     public function __construct() {
-        $this->version = '2.1.1';
+        $this->version = '2.1.2';
         self::$path = plugin_dir_path( __FILE__ );
-
-        // PressTrends WordPress Action
-        add_action('admin_init', array(&$this, 'presstrends'));
-        add_action('fscfctct_event', array(&$this, 'track_event'), 1, 1 );
 
         /**
          * If the server doesn't support PHP 5.3, sorry, but you're outta luck.
@@ -51,7 +47,6 @@ class FSCF_CTCT {
         }
 
         require_once(self::$path."ctct_php_library/ConstantContact.php");
-        require_once(self::$path."nameparse.php");
 
         add_action('fsctf_newsletter_tab', array(&$this, 'adminDisplayForm'));
         add_action('admin_init', array(&$this, 'adminProcessSettings'));
@@ -622,6 +617,8 @@ class FSCF_CTCT {
         $fields['emailAddress'] = self::getIfSet($post, 'email');
         $fields['emailAddress'] = $fields['emailAddress'] ? $fields['emailAddress'] : self::getIfSet($data, 'from_email');
 
+        require_once(self::$path."nameparse.php");
+
         // 1. Parse the from_name parameter for initial data.
         $fields = $this->parseName(@$data['from_name'], $fields);
 
@@ -823,72 +820,9 @@ class FSCF_CTCT {
 
         return $AddedContact;
     }
-
-    function track_event($event_name) {
-        // PressTrends Account API Key & Theme/Plugin Unique Auth Code
-        $api_key        = 'mc9ossbhdx30z6l7x4dnchacxpzhp6e054t4';
-        $auth           = 'fkw7nfo4tk63nr0u6oohfyqxnesb8gc46';
-        $api_base       = 'http://api.presstrends.io/index.php/api/events/track/auth/';
-        $api_string     = $api_base . $auth . '/api/' . $api_key . '/';
-        $site_url       = base64_encode(site_url());
-        $event_string   = $api_string . 'name/' . urlencode($event_name) . '/url/' . $site_url . '/';
-        wp_remote_get( $event_string );
-    }
-
-    function presstrends() {
-        // PressTrends Account API Key
-        $api_key = 'mc9ossbhdx30z6l7x4dnchacxpzhp6e054t4';
-        $auth    = 'fkw7nfo4tk63nr0u6oohfyqxnesb8gc46';
-        // Start of Metrics
-        global $wpdb;
-        $data = get_transient( 'presstrends_cache_data' );
-        if ( !$data || $data == '' ) {
-            $api_base = 'http://api.presstrends.io/index.php/api/pluginsites/update/auth/';
-            $url      = $api_base . $auth . '/api/' . $api_key . '/';
-            $count_posts    = wp_count_posts();
-            $count_pages    = wp_count_posts( 'page' );
-            $comments_count = wp_count_comments();
-            if ( function_exists( 'wp_get_theme' ) ) {
-                $theme_data = wp_get_theme();
-                $theme_name = urlencode( $theme_data->Name );
-            } else {
-                $theme_data = get_theme_data( get_stylesheet_directory() . '/style.css' );
-                $theme_name = $theme_data['Name'];
-            }
-            $plugin_name = '&';
-            foreach ( get_plugins() as $plugin_info ) {
-                if(strlen($plugin_name.$plugin_info['Name'] . '&') > 3000) { continue; } // Too long!
-                $plugin_name .= $plugin_info['Name'] . '&';
-            }
-            // CHANGE __FILE__ PATH IF LOCATED OUTSIDE MAIN PLUGIN FILE
-            $plugin_data         = get_plugin_data( __FILE__ );
-            $posts_with_comments = $wpdb->get_var( "SELECT COUNT(*) FROM $wpdb->posts WHERE post_type='post' AND comment_count > 0" );
-            $data                = array(
-                'url'             => stripslashes( str_replace( array( 'http://', '/', ':' ), '', site_url() ) ),
-                'posts'           => $count_posts->publish,
-                'pages'           => $count_pages->publish,
-                'comments'        => $comments_count->total_comments,
-                'approved'        => $comments_count->approved,
-                'spam'            => $comments_count->spam,
-                'pingbacks'       => $wpdb->get_var( "SELECT COUNT(comment_ID) FROM $wpdb->comments WHERE comment_type = 'pingback'" ),
-                'post_conversion' => ( $count_posts->publish > 0 && $posts_with_comments > 0 ) ? number_format( ( $posts_with_comments / $count_posts->publish ) * 100, 0, '.', '' ) : 0,
-                'theme_version'   => $plugin_data['Version'],
-                'theme_name'      => $theme_name,
-                'site_name'       => str_replace( ' ', '', get_bloginfo( 'name' ) ),
-                'plugins'         => count( get_option( 'active_plugins' ) ),
-                'plugin'          => urlencode( $plugin_name ),
-                'wpversion'       => get_bloginfo( 'version' ),
-            );
-            foreach ( $data as $k => $v ) {
-                $url .= $k . '/' . $v . '/';
-            }
-            wp_remote_get( $url );
-            set_transient( 'presstrends_cache_data', $data, 60 * 60 * 24 );
-        }
-    }
 }
 
-$FSCF_CTCT = new FSCF_CTCT;
+new FSCF_CTCT;
 
 /**
  * Required to trigger tab for FSCF
